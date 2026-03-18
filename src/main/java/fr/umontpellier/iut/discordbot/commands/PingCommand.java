@@ -12,23 +12,23 @@ import java.util.Objects;
 
 public class PingCommand extends AbstractCommand {
 
-    public PingCommand(Bot bot) {
-        super(bot);
-    }
+	public PingCommand(Bot bot) {
+		super(bot);
+	}
 
-    @NotNull
-    @Override
-    public SlashCommandData getCommandInformation() {
-        return Commands.slash("ping", "Répond avec pong")
-                .addOption(OptionType.BOOLEAN, "ephemeral", "Rendre la réponse éphémère (visible uniquement par vous)", false);
-    }
+	@NotNull
+	@Override
+	public SlashCommandData getCommandInformation() {
+		return Commands.slash("ping", "Répond avec pong")
+				.addOption(OptionType.BOOLEAN, "ephemeral", "Rendre la réponse éphémère (visible uniquement par vous)", false);
+	}
 
-    @Override
-    public void execute(SlashCommandInteractionEvent event) {
-        if (event.getOption("ephemeral") != null && Objects.requireNonNull(event.getOption("ephemeral")).getAsBoolean()) {
-            event.reply("Pong!").setEphemeral(true).queue();
-        } else {
-            event.reply("Pong!").queue();
-        }
-    }
+	@Override
+	public void execute(SlashCommandInteractionEvent event) {
+		if (event.getOption("ephemeral") != null && Objects.requireNonNull(event.getOption("ephemeral")).getAsBoolean()) {
+			event.reply("Pong!").setEphemeral(true).queue();
+		} else {
+			event.reply("Pong!").queue();
+		}
+	}
 }

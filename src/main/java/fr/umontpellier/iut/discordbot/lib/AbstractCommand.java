@@ -14,44 +14,44 @@ import java.util.Optional;
 
 public abstract class AbstractCommand extends SharedBot {
 
-    protected final Logger logger;
+	protected final Logger logger;
 
-    public AbstractCommand(Bot bot) {
-        super(bot);
-        this.logger = LoggerFactory.getLogger(this.getClass());
+	public AbstractCommand(Bot bot) {
+		super(bot);
+		this.logger = LoggerFactory.getLogger(this.getClass());
 
-        logger.info("Command initialized !");
-    }
+		logger.info("Command initialized !");
+	}
 
-    public boolean hasAutocomplete() {
-        return false;
-    }
+	public boolean hasAutocomplete() {
+		return false;
+	}
 
-    public Optional<AbstractCommandWithAutocomplete> asAutocompleteCommand() {
-        return Optional.empty();
-    }
+	public Optional<AbstractCommandWithAutocomplete> asAutocompleteCommand() {
+		return Optional.empty();
+	}
 
-    public abstract @NotNull SlashCommandData getCommandInformation();
-    public abstract void execute(SlashCommandInteractionEvent event);
+	public abstract @NotNull SlashCommandData getCommandInformation();
+	public abstract void execute(SlashCommandInteractionEvent event);
 
-    /**
-     *
-     * @param event The event from which we want to get the member. It should be an instance of {@link Interaction}
-     * @return An {@link Optional} of the {@link Member} if it exists, else an empty {@link Optional}
-     */
-    protected Optional<Member> getMember(Interaction event) {
-        if (event.getMember() == null) {
-            logger.warn("Impossible de récupérer le membre pour l'utilisateur {}", event.getUser().getId());
-            return Optional.empty();
-        }
-        return Optional.of(event.getMember());
-    }
+	/**
+	 *
+	 * @param event The event from which we want to get the member. It should be an instance of {@link Interaction}
+	 * @return An {@link Optional} of the {@link Member} if it exists, else an empty {@link Optional}
+	 */
+	protected Optional<Member> getMember(Interaction event) {
+		if (event.getMember() == null) {
+			logger.warn("Impossible de récupérer le membre pour l'utilisateur {}", event.getUser().getId());
+			return Optional.empty();
+		}
+		return Optional.of(event.getMember());
+	}
 
-    protected Optional<Guild> getGuild(Interaction event) {
-        if (event.getGuild() == null) {
-            logger.warn("Impossible de récupérer la guilde {}", event.getContext());
-            return Optional.empty();
-        }
-        return Optional.of(event.getGuild());
-    }
+	protected Optional<Guild> getGuild(Interaction event) {
+		if (event.getGuild() == null) {
+			logger.warn("Impossible de récupérer la guilde {}", event.getContext());
+			return Optional.empty();
+		}
+		return Optional.of(event.getGuild());
+	}
 }

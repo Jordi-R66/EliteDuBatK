@@ -9,26 +9,26 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class CommandManager extends ObjectManager<AbstractCommand> implements ISharedBot {
-    private final Bot bot;
+	private final Bot bot;
 
-    public CommandManager(Bot bot) {
-        super("fr.umontpellier.iut.discordbot.commands", AbstractCommand.class, new Object[]{bot}, Bot.class);
-        this.bot = bot;
-    }
+	public CommandManager(Bot bot) {
+		super("fr.umontpellier.iut.discordbot.commands", AbstractCommand.class, new Object[]{bot}, Bot.class);
+		this.bot = bot;
+	}
 
-    public List<AbstractCommand> getCommands() {
-        return super.get();
-    }
+	public List<AbstractCommand> getCommands() {
+		return super.get();
+	}
 
-    public void registerCommands() {
-        bot.getJda().updateCommands().addCommands(
-                this.get().stream().map(AbstractCommand::getCommandInformation).toList()
-        ).queue();
-    }
+	public void registerCommands() {
+		bot.getJda().updateCommands().addCommands(
+				this.get().stream().map(AbstractCommand::getCommandInformation).toList()
+		).queue();
+	}
 
-    @NotNull
-    @Override
-    public Bot getBot() {
-        return this.bot;
-    }
+	@NotNull
+	@Override
+	public Bot getBot() {
+		return this.bot;
+	}
 }

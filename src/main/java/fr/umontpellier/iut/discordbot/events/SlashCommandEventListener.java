@@ -6,24 +6,24 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import org.jetbrains.annotations.NotNull;
 
 public class SlashCommandEventListener extends AbstractEventListener {
-    public SlashCommandEventListener(Bot bot) {
-        super(bot);
-    }
+	public SlashCommandEventListener(Bot bot) {
+		super(bot);
+	}
 
-    @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
-        this.getBot()
-                .getCommandManager()
-                .getCommands()
-                .stream()
-                .filter(command -> command
-                        .getCommandInformation()
-                        .getName()
-                        .equals(event.getName())
-                ).findFirst()
-                .ifPresentOrElse(
-                        command -> command.execute(event),
-                        () -> event.reply("Commande inconnue...").queue()
-                );
-    }
+	@Override
+	public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent event) {
+		this.getBot()
+				.getCommandManager()
+				.getCommands()
+				.stream()
+				.filter(command -> command
+						.getCommandInformation()
+						.getName()
+						.equals(event.getName())
+				).findFirst()
+				.ifPresentOrElse(
+						command -> command.execute(event),
+						() -> event.reply("Commande inconnue...").queue()
+				);
+	}
 }

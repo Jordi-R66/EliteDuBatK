@@ -10,44 +10,44 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 
 public class Bot implements Runnable {
-    @NotNull
-    private final ConfigLoader config;
-    @NotNull
-    private final CommandManager commands;
-    @NotNull
-    private final EventManager events;
-    private JDA jda;
+	@NotNull
+	private final ConfigLoader config;
+	@NotNull
+	private final CommandManager commands;
+	@NotNull
+	private final EventManager events;
+	private JDA jda;
 
-    public Bot() {
-        config = new ConfigLoader();
-        commands = new CommandManager(this);
-        events = new EventManager(this);
-    }
+	public Bot() {
+		config = new ConfigLoader();
+		commands = new CommandManager(this);
+		events = new EventManager(this);
+	}
 
-    @NotNull
-    public ConfigLoader getConfig() {
-        return config;
-    }
+	@NotNull
+	public ConfigLoader getConfig() {
+		return config;
+	}
 
-    @NotNull
-    public CommandManager getCommandManager() {
-        return commands;
-    }
+	@NotNull
+	public CommandManager getCommandManager() {
+		return commands;
+	}
 
-    @NotNull
-    public JDA getJda() {
-        if (jda == null) {
-            throw new IllegalStateException("JDA is not initialized yet. Please run the bot first.");
-        }
-        return jda;
-    }
+	@NotNull
+	public JDA getJda() {
+		if (jda == null) {
+			throw new IllegalStateException("JDA is not initialized yet. Please run the bot first.");
+		}
+		return jda;
+	}
 
-    @Override
-    public void run() {
-        this.jda = JDABuilder.createLight(config.get().getToken(), Collections.emptyList())
-                .build();
+	@Override
+	public void run() {
+		this.jda = JDABuilder.createLight(config.get().getToken(), Collections.emptyList())
+				.build();
 
-        events.registerEvents();
-        commands.registerCommands();
-    }
+		events.registerEvents();
+		commands.registerCommands();
+	}
 }
