@@ -29,6 +29,10 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 		"role_log_channel": "ID_DU_SALON",
 		"member_log_channel": "ID_DU_SALON",
 		"moderation_channel": "ID_DU_SALON"
+	},
+	"studySuite": {
+		"baseUrl": "https://study-info.umontp.fr",
+		"apiKey": "CLE_DU_BOT"
 	}
 }
 ```
@@ -40,6 +44,7 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 | `adminRole` | ID du rôle autorisé à utiliser `/lock`. Les membres avec la permission Administrateur y ont aussi accès. Pendant un verrouillage, ce rôle garde le droit d'écrire. |
 | `groups` | Groupes de rôles pour la commande de ping : nom du groupe → liste d'IDs de rôles. |
 | `channels` | Salons de logs. Plusieurs clés peuvent pointer vers le même salon ; une clé absente ou vide désactive ce log (avertissement au démarrage). |
+| `studySuite` | Accès à [StudySuite](#studysuite). `baseUrl` vide : `https://study-info.umontp.fr`. `apiKey` : une des clés `bot.apiKeys` de l'API, à ne jamais commiter. |
 
 Salons de logs (`channels`) :
 
@@ -58,6 +63,20 @@ Les logs de salons, rôles, membres et sanctions viennent du journal d'audit Dis
 Pour copier un ID : activer le mode développeur (Paramètres → Avancés), puis clic droit → « Copier l'identifiant ».
 
 Le bot a besoin de l'intent privilégié **Message Content** (Discord Developer Portal → Bot), sinon il ne peut pas se connecter.
+
+## StudySuite
+
+`/study` regroupe ce qui vient de [StudySuite](https://study-info.umontp.fr) (le planning de l'IUT).
+
+| Commande | Description |
+|---|---|
+| `/study planning [periode] [date] [groupe] [prive]` | Emploi du temps d'un jour (par défaut) ou de la semaine. `date` accepte « demain », « lundi », « vendredi prochain », « 15/09 », « 2026-09-15 » ; sans date, aujourd'hui, ou lundi le week-end. `prive` n'affiche la réponse qu'à soi. |
+
+**Le groupe.** Sans l'option `groupe`, c'est la classe du membre, lue depuis ses rôles : les associations rôle Discord → groupe se gèrent dans l'admin de StudySuite (celles qui valident les comptes à la connexion), et le bot les lit avec la clé `studySuite.apiKey`. Sans clé, l'option `groupe` est obligatoire. Si un membre a plusieurs rôles de classe (sa promo et son TP), c'est le plus précis qui compte.
+
+**L'héritage.** Le planning d'un groupe contient aussi les cours de ses groupes parents : un CM de promo est rattaché à la promo, pas à chaque TP. Ces cours affichent le groupe dont ils viennent (« BUT1 », « S1 »…). Les groupes cachés du site (les semestres) sont remplacés par leur parent visible.
+
+**Les heures.** Elles s'affichent en timestamps Discord (`<t:…:t>`) : chacun les voit dans son fuseau et au format de sa langue. L'API renvoie l'heure de Paris étiquetée UTC (`08:00:00.000Z` = 8h à Paris) : le bot lit donc cette heure comme une heure de Paris pour obtenir l'instant réel (06:00 UTC en été), et non comme de l'UTC, ce qui décalerait tout d'une ou deux heures.
 
 ## Docker
 
