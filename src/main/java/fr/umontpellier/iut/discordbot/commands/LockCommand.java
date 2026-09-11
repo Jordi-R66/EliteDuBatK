@@ -81,7 +81,7 @@ public class LockCommand extends AbstractCommand {
 
         CompletableFuture.runAsync(() -> {
             try {
-                channelLockService.lockChannel(channel, guild, member);
+                channelLockService.lockChannel(channel, guild, member, getBot().getConfig().get().getAdminRole());
                 event.getHook().editOriginal("✅ Le salon a été verrouillé par " + member.getAsMention()).queue();
                 sendLockLog("# \uD83D\uDD12 Salon verrouillé", 0xFF0000, String.format(
                         "Salon: %s\nPar: %s\nDate: %s",
@@ -92,6 +92,9 @@ public class LockCommand extends AbstractCommand {
             } catch (ServiceException e) {
                 logger.warn("Failed to lock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while locking channel", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors du verrouillage.").queue();
             }
         });
     }
@@ -128,6 +131,9 @@ public class LockCommand extends AbstractCommand {
             } catch (ServiceException e) {
                 logger.warn("Failed to unlock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while unlocking channel", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors du déverrouillage.").queue();
             }
         });
     }
@@ -144,16 +150,13 @@ public class LockCommand extends AbstractCommand {
                     return;
                 }
 
+                // Une mention s'affiche même si le compte a été supprimé, contrairement à retrieveUserById
                 ChannelLock lock = lockOpt.get();
-                String lockedByUser = getBot().getJda().retrieveUserById(lock.getLockedById())
-                        .complete()
-                        .getName();
-
                 String statusMessage = """
                         🔒 Ce salon est actuellement verrouillé
-                        Verrouillé par: **%s**
+                        Verrouillé par: <@%s>
                         Date du verrouillage: <t:%d:F>""".formatted(
-                        lockedByUser,
+                        lock.getLockedById(),
                         lock.getLockedAt() / 1000
                 );
 
@@ -161,6 +164,9 @@ public class LockCommand extends AbstractCommand {
             } catch (ServiceException e) {
                 logger.warn("Failed to get lock status: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while getting lock status", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors de la récupération de l'état.").queue();
             }
         });
     }
