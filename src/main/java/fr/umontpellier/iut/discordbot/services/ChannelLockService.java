@@ -75,7 +75,10 @@ public class ChannelLockService {
         }
     }
 
-    public void unlockChannel(TextChannel channel) {
+    /**
+     * @return le verrouillage qui vient d'être retiré
+     */
+    public ChannelLock unlockChannel(TextChannel channel) {
         String channelId = channel.getId();
         ChannelLock lock = getChannelLockByChannelId(channelId)
                 .orElseThrow(() -> new ChannelLockStateServiceException("Ce salon n'est pas verrouille."));
@@ -84,6 +87,7 @@ public class ChannelLockService {
             restoreChannelState(channel, lock.getChannelStateJson());
             repository.deleteByChannelId(channelId);
             logger.info("Channel {} unlocked", channelId);
+            return lock;
         } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
