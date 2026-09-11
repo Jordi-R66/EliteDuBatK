@@ -24,7 +24,11 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 	"channels": {
 		"voice_channel": "ID_DU_SALON",
 		"message_delete_channel": "ID_DU_SALON",
-		"lock_channel": "ID_DU_SALON"
+		"lock_channel": "ID_DU_SALON",
+		"channel_log_channel": "ID_DU_SALON",
+		"role_log_channel": "ID_DU_SALON",
+		"member_log_channel": "ID_DU_SALON",
+		"moderation_channel": "ID_DU_SALON"
 	}
 }
 ```
@@ -44,6 +48,12 @@ Salons de logs (`channels`) :
 | `voice_channel` | Connexions, déconnexions et changements de salon vocal |
 | `message_delete_channel` | Messages supprimés (un par un ou en masse) |
 | `lock_channel` | Verrouillages et déverrouillages de salon (`/lock`) |
+| `channel_log_channel` | Salons créés, modifiés, supprimés, et permissions d'un salon (pour un rôle ou un membre) |
+| `role_log_channel` | Rôles créés, modifiés (dont permissions), supprimés |
+| `member_log_channel` | Rôles et pseudo des membres, départs |
+| `moderation_channel` | Bannissements, expulsions, exclusions temporaires (et leur levée) |
+
+Les logs de salons, rôles, membres et sanctions viennent du journal d'audit Discord : ils indiquent l'auteur de l'action et la raison éventuelle. Le bot a besoin de la permission **Voir les logs du serveur**. Les actions faites par le bot lui-même (ex. `/lock`) n'y sont pas journalisées, elles ont leurs propres logs.
 
 Pour copier un ID : activer le mode développeur (Paramètres → Avancés), puis clic droit → « Copier l'identifiant ».
 

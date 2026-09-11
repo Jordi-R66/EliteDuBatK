@@ -16,7 +16,19 @@ public class ConfigStructure {
         MESSAGE_DELETE_CHANNEL("message_delete_channel"),
 
         @SerializedName(value = "lock_channel")
-        LOCK_CHANNEL("lock_channel");
+        LOCK_CHANNEL("lock_channel"),
+
+        @SerializedName(value = "channel_log_channel")
+        CHANNEL_LOG_CHANNEL("channel_log_channel"),
+
+        @SerializedName(value = "role_log_channel")
+        ROLE_LOG_CHANNEL("role_log_channel"),
+
+        @SerializedName(value = "member_log_channel")
+        MEMBER_LOG_CHANNEL("member_log_channel"),
+
+        @SerializedName(value = "moderation_channel")
+        MODERATION_CHANNEL("moderation_channel");
 
         private final String chanType;
 
@@ -34,6 +46,10 @@ public class ConfigStructure {
                 case "voice_channel" -> VOICE_CHANNEL;
                 case "message_delete_channel" -> MESSAGE_DELETE_CHANNEL;
                 case "lock_channel" -> LOCK_CHANNEL;
+                case "channel_log_channel" -> CHANNEL_LOG_CHANNEL;
+                case "role_log_channel" -> ROLE_LOG_CHANNEL;
+                case "member_log_channel" -> MEMBER_LOG_CHANNEL;
+                case "moderation_channel" -> MODERATION_CHANNEL;
                 default -> null;
             };
         }

@@ -1,8 +1,13 @@
 package fr.umontpellier.iut.discordbot.services;
 
 import fr.umontpellier.iut.discordbot.Bot;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure;
+import fr.umontpellier.iut.discordbot.lib.DeleteLogFormatter;
 import fr.umontpellier.iut.discordbot.lib.SharedBot;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -28,6 +33,25 @@ public class LogSender extends SharedBot {
         asSendableChannel(channelId).ifPresentOrElse(
                 chan -> chan.sendMessageComponents(components).useComponentsV2().setAllowedMentions(List.of()).queue(),
                 () -> logger.warn("Channel with ID {} not found, cannot send log message", channelId)
+        );
+    }
+
+    /**
+     * Envoie un log (titre + texte) dans le salon de logs configuré, s'il existe.
+     */
+    public void sendLog(ConfigStructure.LogChannel logChannel, String title, int accentColor, String details) {
+        String channelId = getBot().getConfig().get().getChannelId(logChannel);
+        if (channelId == null || channelId.isBlank()) {
+            logger.warn("No {} configured; skipping Discord log message", logChannel);
+            return;
+        }
+
+        sendComponentToChannelId(channelId,
+                Container.of(
+                        TextDisplay.of(title),
+                        Separator.createDivider(Separator.Spacing.SMALL),
+                        TextDisplay.of(DeleteLogFormatter.truncate(details, DeleteLogFormatter.MAX_TEXT_LENGTH))
+                ).withAccentColor(accentColor)
         );
     }
 
