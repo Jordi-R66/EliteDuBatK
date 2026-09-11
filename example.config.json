@@ -6,6 +6,7 @@
 	"channels": {
 		"voice_channel": "",
 		"message_delete_channel": "",
+		"message_edit_channel": "",
 		"lock_channel": "",
 		"channel_log_channel": "",
 		"role_log_channel": "",
