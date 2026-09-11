@@ -1,72 +1,97 @@
 package fr.umontpellier.iut.discordbot.studysuite;
 
 import fr.umontpellier.iut.discordbot.studysuite.model.Assignment;
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.container.ContainerChildComponent;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.utils.TimeFormat;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 
-/** Met les devoirs en forme pour Discord. Les échéances sont de vrais instants : des timestamps Discord. */
+/**
+ * Met les devoirs en forme pour Discord, en composants V2 : un conteneur, et une section par devoir avec son bouton
+ * au bout de la ligne. Les échéances sont de vrais instants : des timestamps Discord.
+ */
 public final class HomeworkFormatter {
     public static final Color COLOR = new Color(0xE67E22);
-    /** Discord n'accepte pas plus d'options dans un menu déroulant. */
-    public static final int MAX_LISTED = 25;
 
+    /**
+     * Discord limite un message à 40 composants. Le conteneur, l'en-tête et le pied en prennent 3, chaque devoir 3
+     * (la section, son texte, son bouton) : 12 devoirs au plus.
+     */
+    public static final int MAX_LISTED = (Message.MAX_COMPONENT_COUNT_IN_COMPONENT_TREE - 3) / 3;
+    /** Discord limite le texte d'un message V2 ; on garde de la marge pour l'en-tête et le pied. */
+    private static final int MAX_TEXT = Message.MAX_CONTENT_LENGTH_COMPONENT_V2 - 400;
     private static final int MAX_DESCRIPTION_PREVIEW = 120;
 
     private HomeworkFormatter() {
     }
 
-    /** Les devoirs d'un membre, les plus proches d'abord, cochés ou non. */
-    public static MessageEmbed list(List<Assignment> assignments, String siteUrl) {
+    /**
+     * Les devoirs d'un membre, les plus proches d'abord, avec pour chacun le bouton que donne {@code button}.
+     */
+    public static Container list(List<Assignment> assignments, String siteUrl, Function<Assignment, Button> button) {
         List<Assignment> sorted = sort(assignments);
-        EmbedBuilder embed = base(siteUrl).setTitle("Devoirs à rendre", siteUrl + "/homework");
+        List<ContainerChildComponent> children = new ArrayList<>();
+        children.add(TextDisplay.of("## [Devoirs à rendre](" + siteUrl + "/homework)"));
 
         if (sorted.isEmpty()) {
-            return embed.setDescription("Rien à rendre pour l'instant 🎉").build();
+            children.add(TextDisplay.of("Rien à rendre pour l'instant 🎉"));
+            return Container.of(children).withAccentColor(COLOR);
         }
 
         boolean severalGroups = sorted.stream().map(a -> a.studentGroup().id()).distinct().count() > 1;
-        StringBuilder description = new StringBuilder();
+        int text = 0;
         int shown = 0;
         for (Assignment assignment : sorted) {
-            String block = line(assignment, severalGroups) + "\n";
-            if (shown == MAX_LISTED || description.length() + block.length() > MessageEmbed.DESCRIPTION_MAX_LENGTH - 60) {
-                description.append("*… et ").append(sorted.size() - shown).append(" autre(s), voir le site*");
-                break;
-            }
-            description.append(block);
+            String line = line(assignment, severalGroups);
+            if (shown == MAX_LISTED || text + line.length() > MAX_TEXT) break;
+            children.add(Section.of(button.apply(assignment), TextDisplay.of(line)));
+            text += line.length();
             shown++;
         }
 
         long done = sorted.stream().filter(Assignment::completedByMe).count();
-        return embed.setDescription(description.toString().strip())
-                .setFooter("StudySuite · " + done + "/" + sorted.size() + " fait(s) · coche-les ci-dessous")
-                .build();
-    }
-
-    /** L'annonce d'un devoir qui vient d'être ajouté, pour la classe. */
-    public static MessageEmbed created(Assignment assignment, String authorMention, String siteUrl) {
-        EmbedBuilder embed = base(siteUrl)
-                .setTitle(truncate("📚 " + title(assignment), MessageEmbed.TITLE_MAX_LENGTH), siteUrl + "/homework")
-                .addField("Pour", deadline(assignment), true)
-                .addField("Groupe", assignment.studentGroup().label(), true);
-        if (assignment.description() != null && !assignment.description().isBlank()) {
-            embed.setDescription(truncate(assignment.description().strip(), MessageEmbed.DESCRIPTION_MAX_LENGTH));
+        String footer = "-# " + done + "/" + sorted.size() + " fait(s)";
+        if (shown < sorted.size()) {
+            footer += " · et " + (sorted.size() - shown) + " autre(s) sur [le site](" + siteUrl + "/homework)";
         }
-        embed.addField("Ajouté par", authorMention, true);
-        return embed.build();
+        children.add(TextDisplay.of(footer));
+        return Container.of(children).withAccentColor(COLOR);
     }
 
+    /** L'annonce d'un devoir qui vient d'être ajouté, pour la classe, avec un bouton pour le cocher. */
+    public static Container created(Assignment assignment, String authorMention, String siteUrl, Button button) {
+        StringBuilder text = new StringBuilder()
+                .append("### 📚 Nouveau devoir pour ").append(assignment.studentGroup().label()).append('\n')
+                .append("**").append(title(assignment)).append("**\n")
+                .append("Pour le ").append(deadline(assignment));
+        if (assignment.description() != null && !assignment.description().isBlank()) {
+            text.append("\n\n").append(truncate(assignment.description().strip(), 1500));
+        }
+
+        return Container.of(
+                Section.of(button, TextDisplay.of(text.toString())),
+                Separator.createDivider(Separator.Spacing.SMALL),
+                TextDisplay.of("-# Ajouté par " + authorMention + " · [voir sur StudySuite](" + siteUrl + "/homework)")
+        ).withAccentColor(COLOR);
+    }
+
+    /** Un devoir sur trois lignes : état et titre, échéance, aperçu de la description. */
     static String line(Assignment assignment, boolean showGroup) {
         StringBuilder line = new StringBuilder()
                 .append(assignment.completedByMe() ? "✅ ~~" : "⬜ **")
                 .append(title(assignment))
                 .append(assignment.completedByMe() ? "~~" : "**")
-                .append(" · ").append(deadline(assignment));
+                .append('\n').append(deadline(assignment));
         if (showGroup) {
             line.append(" · ").append(assignment.studentGroup().label());
         }
@@ -91,12 +116,6 @@ public final class HomeworkFormatter {
         return assignments.stream()
                 .sorted(Comparator.comparing(Assignment::due).thenComparing(Assignment::title))
                 .toList();
-    }
-
-    private static EmbedBuilder base(String siteUrl) {
-        return new EmbedBuilder()
-                .setColor(COLOR)
-                .setFooter("StudySuite · " + siteUrl.replaceFirst("^https?://", ""));
     }
 
     static String truncate(String s, int max) {

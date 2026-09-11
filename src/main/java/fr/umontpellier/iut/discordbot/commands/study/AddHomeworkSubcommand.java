@@ -8,13 +8,14 @@ import fr.umontpellier.iut.discordbot.studysuite.model.Assignment;
 import fr.umontpellier.iut.discordbot.studysuite.model.GroupRef;
 import fr.umontpellier.iut.discordbot.studysuite.model.NewAssignment;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -25,7 +26,7 @@ import java.util.Optional;
 
 /**
  * {@code /study devoir-ajouter titre date [heure] [matiere] [description] [groupe]} : ajoute un devoir sur StudySuite
- * au nom du membre, et l'annonce dans le salon.
+ * au nom du membre, et l'annonce dans le salon avec un bouton pour que chacun le coche.
  * <p>
  * StudySuite vérifie que le compte du membre est validé et qu'il a accès au groupe ; le bot ne fait que relayer.
  */
@@ -79,13 +80,13 @@ public class AddHomeworkSubcommand extends StudySubcommand {
 
         String userId = event.getUser().getId();
         String mention = event.getUser().getAsMention();
-        replyLater(event, false, () -> create(userId, mention, member, groupInput, new Draft(title, subject, description, due)));
+        replyLaterWith(event, false, () -> create(userId, mention, member, groupInput, new Draft(title, subject, description, due)));
     }
 
     private record Draft(String title, String subject, String description, Instant due) {
     }
 
-    private MessageEmbed create(String userId, String mention, Member member, String groupInput, Draft draft) {
+    private MessageEditData create(String userId, String mention, Member member, String groupInput, Draft draft) {
         StudySuiteClient client = getBot().getStudySuite();
         HomeworkSubcommand.requireApiKey(client);
 
@@ -99,7 +100,11 @@ public class AddHomeworkSubcommand extends StudySubcommand {
         Assignment created = client.createAssignment(userId, new NewAssignment(
                 draft.title(), draft.subject(), draft.description(), draft.due().toString(), groups.getFirst().id()));
         logger.info("User {} added assignment {} for group {}", userId, created.id(), groups.getFirst().internalName());
-        return HomeworkFormatter.created(created, mention, client.getBaseUrl());
+        return new MessageEditBuilder()
+                .useComponentsV2()
+                .setComponents(HomeworkFormatter.created(created, mention, client.getBaseUrl(),
+                        HomeworkSubcommand.announcementButton(created)))
+                .build();
     }
 
     /** Pourquoi ces options ne donnent pas un devoir valable, s'il y a une raison. */

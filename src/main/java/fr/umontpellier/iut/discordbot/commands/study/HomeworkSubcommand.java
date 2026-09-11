@@ -2,14 +2,12 @@ package fr.umontpellier.iut.discordbot.commands.study;
 
 import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.studysuite.HomeworkFormatter;
-import fr.umontpellier.iut.discordbot.studysuite.StudyDates;
 import fr.umontpellier.iut.discordbot.studysuite.StudySuiteClient;
 import fr.umontpellier.iut.discordbot.studysuite.model.Assignment;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.selections.SelectOption;
-import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -20,24 +18,24 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
 
 /**
- * {@code /study devoirs [passes]} : les devoirs du membre, d'après son compte StudySuite, avec un menu pour cocher
- * ceux qu'il a faits. Toujours en privé : c'est sa liste à lui.
+ * {@code /study devoirs [passes]} : les devoirs du membre, d'après son compte StudySuite, chacun avec un bouton pour
+ * le cocher. Toujours en privé : c'est sa liste à lui.
+ * <p>
+ * Les boutons ({@code study:devoirs:<done|undo>:<devoir>:<contexte>}) servent aussi aux annonces de
+ * {@link AddHomeworkSubcommand}. Le contexte dit quoi faire après : dans une liste, c'est le début de la période
+ * affichée, pour la réafficher à jour ; sur une annonce ({@value #ANNOUNCEMENT}), le message est public et le même
+ * pour tous, on confirme donc en privé à celui qui a cliqué.
  */
 public class HomeworkSubcommand extends StudySubcommand {
     static final String NAME = "devoirs";
+    static final String ANNOUNCEMENT = "a";
+    private static final String DONE = "done";
+    private static final String UNDO = "undo";
     private static final String OPTION_PAST = "passes";
     /** Avec {@code passes}, jusqu'où on regarde en arrière. */
     private static final Duration PAST_WINDOW = Duration.ofDays(14);
-
-    private static final DateTimeFormatter OPTION_DATE =
-            DateTimeFormatter.ofPattern("'pour le' EEE d/MM 'à' HH:mm", Locale.FRENCH).withZone(StudyDates.PARIS);
 
     public HomeworkSubcommand(@NotNull Bot bot) {
         super(bot);
@@ -59,59 +57,58 @@ public class HomeworkSubcommand extends StudySubcommand {
         replyLaterWith(event, true, () -> render(userId, from));
     }
 
-    /**
-     * Le menu porte dans son identifiant le début de la période affichée, pour réafficher la même liste une fois les
-     * cases mises à jour. L'état « fait » de départ, lui, est celui des options cochées par défaut.
-     */
     @Override
-    public void onStringSelect(StringSelectInteractionEvent event) {
+    public void onButton(ButtonInteractionEvent event) {
         String[] parts = event.getComponentId().split(":");
-        Instant from = Instant.ofEpochSecond(Long.parseLong(parts[2]));
+        if (parts.length != 5 || !(parts[2].equals(DONE) || parts[2].equals(UNDO))) {
+            event.reply("Ce bouton n'est plus actif.").setEphemeral(true).queue();
+            return;
+        }
+        boolean done = parts[2].equals(DONE);
+        String assignmentId = parts[3];
+        String context = parts[4];
         String userId = event.getUser().getId();
+        StudySuiteClient client = getBot().getStudySuite();
 
-        Set<String> before = new HashSet<>();
-        event.getSelectMenu().getOptions().stream().filter(SelectOption::isDefault).forEach(o -> before.add(o.getValue()));
-        Set<String> after = new HashSet<>(event.getValues());
+        if (context.equals(ANNOUNCEMENT)) {
+            replyPrivatelyLater(event, () -> {
+                requireApiKey(client);
+                client.setCompleted(userId, assignmentId, done);
+                return new MessageEditBuilder()
+                        .setContent(done ? "✅ Coché dans ta liste de devoirs." : "↩️ Décoché.")
+                        .setComponents(ActionRow.of(button(assignmentId, !done, ANNOUNCEMENT)))
+                        .build();
+            });
+            return;
+        }
 
+        Instant from = Instant.ofEpochSecond(Long.parseLong(context));
         editLater(event, () -> {
-            StudySuiteClient client = getBot().getStudySuite();
-            for (SelectOption option : event.getSelectMenu().getOptions()) {
-                String id = option.getValue();
-                boolean done = after.contains(id);
-                if (done != before.contains(id)) {
-                    client.setCompleted(userId, id, done);
-                }
-            }
+            requireApiKey(client);
+            client.setCompleted(userId, assignmentId, done);
             return render(userId, from);
         });
+    }
+
+    /** Le bouton qui met ce devoir dans l'état inverse de {@code completed}. */
+    static Button button(String assignmentId, boolean completed, String context) {
+        String id = "study:" + NAME + ":" + (completed ? UNDO : DONE) + ":" + assignmentId + ":" + context;
+        return completed ? Button.secondary(id, "Annuler") : Button.success(id, "Fait ✓");
     }
 
     private MessageEditData render(String userId, Instant from) {
         StudySuiteClient client = getBot().getStudySuite();
         requireApiKey(client);
-        List<Assignment> assignments = HomeworkFormatter.sort(client.getAssignments(userId, from));
+        String context = String.valueOf(from.getEpochSecond());
 
-        MessageEditBuilder message = new MessageEditBuilder()
-                .setEmbeds(HomeworkFormatter.list(assignments, client.getBaseUrl()));
-
-        List<Assignment> listed = assignments.stream().limit(HomeworkFormatter.MAX_LISTED).toList();
-        if (listed.isEmpty()) {
-            return message.setComponents().build();
-        }
-
-        StringSelectMenu.Builder menu = StringSelectMenu.create("study:" + NAME + ":" + from.getEpochSecond())
-                .setPlaceholder("Coche ce que tu as fait")
-                .setRequiredRange(0, listed.size());
-        for (Assignment assignment : listed) {
-            menu.addOption(
-                    truncate(HomeworkFormatter.title(assignment), SelectOption.LABEL_MAX_LENGTH),
-                    assignment.id(),
-                    truncate(OPTION_DATE.format(assignment.due()), SelectOption.DESCRIPTION_MAX_LENGTH)
-            );
-        }
-        menu.setDefaultValues(listed.stream().filter(Assignment::completedByMe).map(Assignment::id).toList());
-
-        return message.setComponents(ActionRow.of(menu.build())).build();
+        return new MessageEditBuilder()
+                .useComponentsV2()
+                .setComponents(HomeworkFormatter.list(
+                        client.getAssignments(userId, from),
+                        client.getBaseUrl(),
+                        a -> button(a.id(), a.completedByMe(), context)
+                ))
+                .build();
     }
 
     static void requireApiKey(StudySuiteClient client) {
@@ -120,7 +117,8 @@ public class HomeworkSubcommand extends StudySubcommand {
         }
     }
 
-    private static String truncate(String s, int max) {
-        return s.length() <= max ? s : s.substring(0, max - 1) + "…";
+    /** Le bouton d'une annonce toute fraîche : personne ne l'a encore coché. */
+    static Button announcementButton(Assignment assignment) {
+        return button(assignment.id(), false, ANNOUNCEMENT);
     }
 }

@@ -14,7 +14,8 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import fr.umontpellier.iut.discordbot.studysuite.StudySuiteNotLinkedException;
 import fr.umontpellier.iut.discordbot.studysuite.StudySuiteRefusedException;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -129,21 +130,32 @@ public abstract class StudySubcommand extends SharedBot {
         }));
     }
 
-    /** Un menu déroulant de cette sous-commande ({@code study:<sous-commande>:…}). */
-    public void onStringSelect(StringSelectInteractionEvent event) {
-        event.reply("Ce menu n'est plus actif.").setEphemeral(true).queue();
+    /** Un bouton de cette sous-commande ({@code study:<sous-commande>:…}). */
+    public void onButton(ButtonInteractionEvent event) {
+        event.reply("Ce bouton n'est plus actif.").setEphemeral(true).queue();
     }
 
     /**
-     * Met à jour le message du menu : l'interaction est acquittée tout de suite, {@code task} tourne hors du thread
+     * Met à jour le message du composant : l'interaction est acquittée tout de suite, {@code task} tourne hors du thread
      * de JDA, et une erreur est signalée à part, sans toucher au message.
      */
-    protected void editLater(StringSelectInteractionEvent event, MessageTask task) {
+    protected void editLater(GenericComponentInteractionCreateEvent event, MessageTask task) {
         event.deferEdit().queue(hook -> EXECUTOR.execute(() -> {
             try {
                 hook.editOriginal(task.run()).queue();
             } catch (RuntimeException e) {
                 hook.sendMessage("❌ " + errorMessage(e)).setEphemeral(true).queue();
+            }
+        }));
+    }
+
+    /** Répond en privé à celui qui a cliqué, sans toucher au message du composant. */
+    protected void replyPrivatelyLater(GenericComponentInteractionCreateEvent event, MessageTask task) {
+        event.deferReply(true).queue(hook -> EXECUTOR.execute(() -> {
+            try {
+                hook.editOriginal(task.run()).queue();
+            } catch (RuntimeException e) {
+                hook.editOriginal("❌ " + errorMessage(e)).queue();
             }
         }));
     }
