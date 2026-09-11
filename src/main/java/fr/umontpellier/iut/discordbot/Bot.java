@@ -2,6 +2,7 @@ package fr.umontpellier.iut.discordbot;
 
 import fr.umontpellier.iut.discordbot.commands.CommandManager;
 import fr.umontpellier.iut.discordbot.config.ConfigLoader;
+import fr.umontpellier.iut.discordbot.database.RepositoryFactory;
 import fr.umontpellier.iut.discordbot.events.EventManager;
 import fr.umontpellier.iut.discordbot.lib.BoundedCache;
 import fr.umontpellier.iut.discordbot.lib.CachedMessage;
@@ -10,17 +11,24 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import org.jetbrains.annotations.NotNull;
 
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 public class Bot implements Runnable {
+	private static final Logger logger = LoggerFactory.getLogger(Bot.class);
 	private static final int MAX_CACHED_MESSAGES = 10_000;
 
 	@NotNull
 	private final ConfigLoader config;
+	@NotNull
+	private final RepositoryFactory repositories;
 	@NotNull
 	private final CommandManager commands;
 	@NotNull
@@ -32,22 +40,21 @@ public class Bot implements Runnable {
 	@NotNull
 	private final Map<String, CachedMessage> cachedMessages;
 
-	public Bot() {
+	public Bot() throws SQLException {
 		config = new ConfigLoader();
+		repositories = new RepositoryFactory(this);
 		commands = new CommandManager(this);
 		events = new EventManager(this);
 		cachedMessages = Collections.synchronizedMap(new BoundedCache<>(MAX_CACHED_MESSAGES));
 		logSender = new LogSender(this);
-	}
 
-	@Override
-	public void run() {
-		this.jda = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS))
-				.enableCache(CacheFlag.VOICE_STATE)
-				.build();
-
-		events.registerEvents();
-		commands.registerCommands();
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			try {
+				repositories.close();
+			} catch (SQLException e) {
+				logger.error("Failed to close database connection", e);
+			}
+		}));
 	}
 
 	@NotNull
@@ -58,6 +65,11 @@ public class Bot implements Runnable {
 	@NotNull
 	public CommandManager getCommandManager() {
 		return commands;
+	}
+
+	@NotNull
+	public RepositoryFactory getRepositories() {
+		return repositories;
 	}
 
 	@NotNull
@@ -75,5 +87,15 @@ public class Bot implements Runnable {
 
 	public LogSender getLogSender() {
 		return logSender;
+	}
+
+	@Override
+	public void run() {
+		// Les commandes sont enregistrées dans ReadyEventListener
+		this.jda = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS))
+				.enableCache(CacheFlag.VOICE_STATE)
+				.build();
+
+		events.registerEvents();
 	}
 }

@@ -1,5 +1,8 @@
 {
 	"token": "",
+	"databasePath": "data.db",
+	"adminRole": "",
+	"groups": {},
 	"channels": {
 		"voice_channel": "",
 		"message_delete_channel": ""

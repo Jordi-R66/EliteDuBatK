@@ -36,11 +36,18 @@ public class ConfigStructure {
     }
 
     private String token;
+    private String databasePath;
+
+    private String adminRole;
     private Map<String, List<String>> groups;
     private Map<String, String> channels;
 
     public String getToken() {
         return token;
+    }
+
+    public String getJDBCUrl() {
+        return "jdbc:sqlite:" + databasePath;
     }
 
     public List<String> getRolesIdForGroup(String group) {
@@ -51,6 +58,10 @@ public class ConfigStructure {
 
     public List<String> getRoles() {
         return groups.keySet().stream().toList();
+    }
+
+    public String getAdminRole() {
+        return adminRole;
     }
 
     public Map<String, String> getChannels() {
