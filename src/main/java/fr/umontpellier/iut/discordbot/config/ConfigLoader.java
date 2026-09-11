@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.Map;
 
 public class ConfigLoader {
@@ -29,6 +30,9 @@ public class ConfigLoader {
 		try {
 			Reader reader = new FileReader(pathToConfig);
 			this.config = gson.fromJson(reader, ConfigStructure.class);
+			if (this.config == null) {
+				throw new IllegalStateException("Config file " + pathToConfig + " is empty");
+			}
 			validateConfig();
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
@@ -40,7 +44,7 @@ public class ConfigLoader {
 		if (channels != null) {
 			for (String key : channels.keySet()) {
 				if (!isKnownChannelKey(key)) {
-					logger.warn("Unknown channel key '{}' in config; expected keys are '{}' and '{}'", key, ConfigStructure.LogChannel.VOICE_CHANNEL, ConfigStructure.LogChannel.MESSAGE_DELETE_CHANNEL);
+					logger.warn("Unknown channel key '{}' in config; expected keys are {}", key, Arrays.toString(ConfigStructure.LogChannel.values()));
 				}
 			}
 		}

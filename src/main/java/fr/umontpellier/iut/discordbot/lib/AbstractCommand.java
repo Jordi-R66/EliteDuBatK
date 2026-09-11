@@ -1,6 +1,7 @@
 package fr.umontpellier.iut.discordbot.lib;
 
 import fr.umontpellier.iut.discordbot.Bot;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -55,7 +56,12 @@ public abstract class AbstractCommand extends SharedBot {
 		return Optional.of(event.getGuild());
 	}
 
+	/**
+	 * Un membre est admin s'il a le rôle admin de la config, la permission Administrateur, ou s'il est propriétaire du serveur.
+	 */
 	protected boolean isAdmin(Member member) {
+		if (member.hasPermission(Permission.ADMINISTRATOR)) return true;
+
 		String adminRoleId = getBot().getConfig().get().getAdminRole();
 		if (adminRoleId == null || adminRoleId.isBlank()) return false;
 		return member.getRoles().stream().anyMatch(r -> r.getId().equals(adminRoleId));

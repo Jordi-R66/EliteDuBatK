@@ -13,7 +13,10 @@ public class ConfigStructure {
 
 
         @SerializedName(value = "message_delete_channel")
-        MESSAGE_DELETE_CHANNEL("message_delete_channel");
+        MESSAGE_DELETE_CHANNEL("message_delete_channel"),
+
+        @SerializedName(value = "lock_channel")
+        LOCK_CHANNEL("lock_channel");
 
         private final String chanType;
 
@@ -30,6 +33,7 @@ public class ConfigStructure {
             return switch (str) {
                 case "voice_channel" -> VOICE_CHANNEL;
                 case "message_delete_channel" -> MESSAGE_DELETE_CHANNEL;
+                case "lock_channel" -> LOCK_CHANNEL;
                 default -> null;
             };
         }
@@ -51,13 +55,17 @@ public class ConfigStructure {
     }
 
     public List<String> getRolesIdForGroup(String group) {
+        if (groups == null) {
+            return List.of();
+        }
+
         List<String> rolesId = groups.get(group);
 
         return rolesId == null ? List.of() : rolesId;
     }
 
     public List<String> getRoles() {
-        return groups.keySet().stream().toList();
+        return groups == null ? List.of() : groups.keySet().stream().toList();
     }
 
     public String getAdminRole() {
@@ -90,5 +98,10 @@ public class ConfigStructure {
     @Nullable
     public String getMessageDeleteChannelId() {
         return getChannelId(LogChannel.MESSAGE_DELETE_CHANNEL);
+    }
+
+    @Nullable
+    public String getLockChannelId() {
+        return getChannelId(LogChannel.LOCK_CHANNEL);
     }
 }

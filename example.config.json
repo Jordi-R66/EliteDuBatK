@@ -5,6 +5,7 @@
 	"groups": {},
 	"channels": {
 		"voice_channel": "",
-		"message_delete_channel": ""
+		"message_delete_channel": "",
+		"lock_channel": ""
 	}
 }

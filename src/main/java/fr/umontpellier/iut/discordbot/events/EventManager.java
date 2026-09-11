@@ -3,6 +3,7 @@ package fr.umontpellier.iut.discordbot.events;
 import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractEventListener;
 import fr.umontpellier.iut.discordbot.lib.ObjectManager;
+import net.dv8tion.jda.api.JDABuilder;
 
 import java.util.List;
 
@@ -14,8 +15,8 @@ public class EventManager extends ObjectManager<AbstractEventListener> {
 		this.bot = bot;
 	}
 
-	public void registerEvents() {
-		get().forEach(event -> bot.getJda().addEventListener(event));
+	public void registerEvents(JDABuilder builder) {
+		builder.addEventListeners(get().toArray());
 	}
 
 	public List<AbstractEventListener> getEventListeners() {

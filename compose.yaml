@@ -4,5 +4,11 @@ services:
     build: .
     container_name: discordbot
     restart: unless-stopped
+    # Le dossier de travail est le volume ./data : un databasePath relatif (ex. "data.db")
+    # y est créé et survit à la recréation du conteneur
+    working_dir: /app/data
+    environment:
+      CONFIG_PATH: /app/config.json
     volumes:
-      - ./config.json:/app/config.json
+      - ./config.json:/app/config.json:ro
+      - ./data:/app/data

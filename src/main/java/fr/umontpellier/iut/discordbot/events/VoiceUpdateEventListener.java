@@ -39,7 +39,7 @@ public class VoiceUpdateEventListener extends AbstractEventListener {
 
         sendVoiceLog(
                 Container.of(
-                        TextDisplay.of("# \uD83D\udd0A Connexion vocal"),
+                        TextDisplay.of("# \uD83D\udd0A Connexion vocale"),
                         Separator.createDivider(Separator.Spacing.SMALL),
                         Section.of(
                                 Thumbnail.fromUrl(event.getMember().getUser().getEffectiveAvatarUrl()),
@@ -57,7 +57,7 @@ public class VoiceUpdateEventListener extends AbstractEventListener {
 
         sendVoiceLog(
                 Container.of(
-                        TextDisplay.of("# \uD83D\uDD07 Connexion vocal"),
+                        TextDisplay.of("# \uD83D\uDD07 Déconnexion vocale"),
                         Separator.createDivider(Separator.Spacing.SMALL),
                         Section.of(
                                 Thumbnail.fromUrl(event.getMember().getUser().getEffectiveAvatarUrl()),

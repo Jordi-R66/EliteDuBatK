@@ -91,11 +91,14 @@ public class Bot implements Runnable {
 
 	@Override
 	public void run() {
-		// Les commandes sont enregistrées dans ReadyEventListener
-		this.jda = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS))
+		// Les listeners sont ajoutés avant build() pour ne rater aucun événement (dont ReadyEvent,
+		// qui enregistre les commandes)
+		JDABuilder builder = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS))
 				.enableCache(CacheFlag.VOICE_STATE)
-				.build();
+				// Sinon JDA découpe les suppressions en masse en MessageDeleteEvent individuels
+				.setBulkDeleteSplittingEnabled(false);
+		events.registerEvents(builder);
 
-		events.registerEvents();
+		this.jda = builder.build();
 	}
 }

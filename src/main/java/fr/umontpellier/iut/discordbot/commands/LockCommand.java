@@ -6,6 +6,9 @@ import fr.umontpellier.iut.discordbot.database.repositories.ChannelLockRepositor
 import fr.umontpellier.iut.discordbot.lib.AbstractCommand;
 import fr.umontpellier.iut.discordbot.services.ChannelLockService;
 import fr.umontpellier.iut.discordbot.services.exceptions.ServiceException;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -13,6 +16,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.utils.TimeFormat;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -71,17 +75,30 @@ public class LockCommand extends AbstractCommand {
             return;
         }
 
-        event.deferReply().queue();
         TextChannel channel = event.getChannel().asTextChannel();
+        if (replyIfLockStateIs(event, channel, true, "❌ Ce salon est déjà verrouillé.")) {
+            return;
+        }
+
+        event.deferReply().queue();
         Guild guild = guildOpt.get();
 
         CompletableFuture.runAsync(() -> {
             try {
-                channelLockService.lockChannel(channel, guild, member);
+                channelLockService.lockChannel(channel, guild, member, getBot().getConfig().get().getAdminRole());
                 event.getHook().editOriginal("✅ Le salon a été verrouillé par " + member.getAsMention()).queue();
+                sendLockLog("# \uD83D\uDD12 Salon verrouillé", 0xFF0000, String.format(
+                        "Salon: %s\nPar: %s\nDate: %s",
+                        channel.getAsMention(),
+                        member.getAsMention(),
+                        TimeFormat.DATE_TIME_SHORT.now()
+                ));
             } catch (ServiceException e) {
                 logger.warn("Failed to lock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while locking channel", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors du verrouillage.").queue();
             }
         });
     }
@@ -100,16 +117,31 @@ public class LockCommand extends AbstractCommand {
             return;
         }
 
-        event.deferReply().queue();
         TextChannel channel = event.getChannel().asTextChannel();
+        if (replyIfLockStateIs(event, channel, false, "❌ Ce salon n'est pas verrouillé.")) {
+            return;
+        }
+
+        event.deferReply().queue();
 
         CompletableFuture.runAsync(() -> {
             try {
-                channelLockService.unlockChannel(channel);
+                ChannelLock lock = channelLockService.unlockChannel(channel);
                 event.getHook().editOriginal("✅ Le salon a été déverrouillé. L'état précédent a été restauré.").queue();
+                sendLockLog("# \uD83D\uDD13 Salon déverrouillé", 0x00FF00, String.format(
+                        "Salon: %s\nPar: %s\nDate: %s\n\nVerrouillé par <@%s> le %s",
+                        channel.getAsMention(),
+                        member.getAsMention(),
+                        TimeFormat.DATE_TIME_SHORT.now(),
+                        lock.getLockedById(),
+                        TimeFormat.DATE_TIME_SHORT.atTimestamp(lock.getLockedAt())
+                ));
             } catch (ServiceException e) {
                 logger.warn("Failed to unlock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while unlocking channel", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors du déverrouillage.").queue();
             }
         });
     }
@@ -126,16 +158,13 @@ public class LockCommand extends AbstractCommand {
                     return;
                 }
 
+                // Une mention s'affiche même si le compte a été supprimé, contrairement à retrieveUserById
                 ChannelLock lock = lockOpt.get();
-                String lockedByUser = getBot().getJda().retrieveUserById(lock.getLockedById())
-                        .complete()
-                        .getName();
-
                 String statusMessage = """
                         🔒 Ce salon est actuellement verrouillé
-                        Verrouillé par: **%s**
+                        Verrouillé par: <@%s>
                         Date du verrouillage: <t:%d:F>""".formatted(
-                        lockedByUser,
+                        lock.getLockedById(),
                         lock.getLockedAt() / 1000
                 );
 
@@ -143,7 +172,45 @@ public class LockCommand extends AbstractCommand {
             } catch (ServiceException e) {
                 logger.warn("Failed to get lock status: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
+            } catch (Exception e) {
+                logger.error("Unexpected error while getting lock status", e);
+                event.getHook().editOriginal("❌ Erreur inattendue lors de la récupération de l'état.").queue();
             }
         });
+    }
+
+    /**
+     * Répond en privé si le salon est déjà dans l'état demandé, avant la réponse publique de la commande.
+     *
+     * @return true si une réponse a été envoyée
+     */
+    private boolean replyIfLockStateIs(SlashCommandInteractionEvent event, TextChannel channel, boolean locked, String message) {
+        try {
+            if (channelLockService.isChannelLocked(channel.getId()) == locked) {
+                event.reply(message).setEphemeral(true).queue();
+                return true;
+            }
+            return false;
+        } catch (ServiceException e) {
+            logger.warn("Failed to get lock state: {}", e.getMessage());
+            event.reply("❌ " + e.getMessage()).setEphemeral(true).queue();
+            return true;
+        }
+    }
+
+    private void sendLockLog(String title, int color, String details) {
+        String channelId = getBot().getConfig().get().getLockChannelId();
+        if (channelId == null || channelId.isBlank()) {
+            logger.warn("No lock log channel configured; skipping Discord log message");
+            return;
+        }
+
+        getBot().getLogSender().sendComponentToChannelId(channelId,
+                Container.of(
+                        TextDisplay.of(title),
+                        Separator.createDivider(Separator.Spacing.SMALL),
+                        TextDisplay.of(details)
+                ).withAccentColor(color)
+        );
     }
 }
