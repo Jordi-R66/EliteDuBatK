@@ -6,6 +6,8 @@ import fr.umontpellier.iut.discordbot.lib.AuditLogFormatter;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogChange;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
+import net.dv8tion.jda.api.entities.channel.attribute.ICategorizableChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ public class ChannelAuditListener extends AbstractAuditLogListener {
 					"Salon : " + channel
 							+ "\nNom : " + AuditLogFormatter.value(newValue(entry, "name"))
 							+ "\nType : " + AuditLogFormatter.channelType(newValue(entry, "type"))
-							+ parent(newValue(entry, "parent_id"))
+							+ parent(createdParentId(entry))
 							+ footer(entry));
 			case CHANNEL_DELETE -> sendLog(LogChannel.CHANNEL_LOG_CHANNEL, "# ➖ Salon supprimé", 0xFF0000,
 					"Nom : " + AuditLogFormatter.value(oldValue(entry, "name"))
@@ -89,6 +91,17 @@ public class ChannelAuditListener extends AbstractAuditLogListener {
 		}
 
 		return lines;
+	}
+
+	/**
+	 * Discord ne met pas la catégorie dans l'entrée d'audit d'une création : on la lit dans le cache JDA.
+	 */
+	private static Object createdParentId(AuditLogEntry entry) {
+		GuildChannel channel = entry.getGuild().getGuildChannelById(entry.getTargetIdLong());
+		if (channel instanceof ICategorizableChannel categorizable && categorizable.getParentCategoryIdLong() != 0) {
+			return categorizable.getParentCategoryId();
+		}
+		return newValue(entry, "parent_id");
 	}
 
 	private static String parent(Object parentId) {

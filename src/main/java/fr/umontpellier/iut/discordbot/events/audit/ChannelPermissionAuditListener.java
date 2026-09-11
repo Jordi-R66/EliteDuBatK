@@ -26,12 +26,17 @@ public class ChannelPermissionAuditListener extends AbstractAuditLogListener {
 			default -> "# 🔐 Permissions d'un salon modifiées";
 		};
 
-		String diff = AuditLogFormatter.overrideDiff(
-				AuditLogFormatter.toLong(oldValue(entry, "allow")),
-				AuditLogFormatter.toLong(oldValue(entry, "deny")),
-				AuditLogFormatter.toLong(newValue(entry, "allow")),
-				AuditLogFormatter.toLong(newValue(entry, "deny"))
-		);
+		long oldAllow = AuditLogFormatter.toLong(oldValue(entry, "allow"));
+		long oldDeny = AuditLogFormatter.toLong(oldValue(entry, "deny"));
+		long newAllow = AuditLogFormatter.toLong(newValue(entry, "allow"));
+		long newDeny = AuditLogFormatter.toLong(newValue(entry, "deny"));
+
+		// L'interface de Discord crée d'abord une surcharge vide, puis la modifie : seule la modification est utile
+		if (oldAllow == newAllow && oldDeny == newDeny) {
+			return;
+		}
+
+		String diff = AuditLogFormatter.overrideDiff(oldAllow, oldDeny, newAllow, newDeny);
 
 		sendLog(LogChannel.CHANNEL_LOG_CHANNEL, title, 0xFFFF00,
 				"Salon : <#" + entry.getTargetId() + ">"
