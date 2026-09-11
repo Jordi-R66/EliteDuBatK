@@ -3,6 +3,7 @@ package fr.umontpellier.iut.discordbot;
 import fr.umontpellier.iut.discordbot.commands.CommandManager;
 import fr.umontpellier.iut.discordbot.config.ConfigLoader;
 import fr.umontpellier.iut.discordbot.events.EventManager;
+import fr.umontpellier.iut.discordbot.lib.BoundedCache;
 import fr.umontpellier.iut.discordbot.lib.CachedMessage;
 import fr.umontpellier.iut.discordbot.services.LogSender;
 import net.dv8tion.jda.api.JDA;
@@ -12,11 +13,12 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class Bot implements Runnable {
+	private static final int MAX_CACHED_MESSAGES = 10_000;
+
 	@NotNull
 	private final ConfigLoader config;
 	@NotNull
@@ -34,13 +36,13 @@ public class Bot implements Runnable {
 		config = new ConfigLoader();
 		commands = new CommandManager(this);
 		events = new EventManager(this);
-		cachedMessages = new HashMap<>();
+		cachedMessages = Collections.synchronizedMap(new BoundedCache<>(MAX_CACHED_MESSAGES));
 		logSender = new LogSender(this);
 	}
 
 	@Override
 	public void run() {
-		this.jda = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MEMBERS))
+		this.jda = JDABuilder.createLight(config.get().getToken(), List.of(GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS))
 				.enableCache(CacheFlag.VOICE_STATE)
 				.build();
 

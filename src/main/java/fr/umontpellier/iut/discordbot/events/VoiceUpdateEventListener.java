@@ -22,7 +22,9 @@ public class VoiceUpdateEventListener extends AbstractEventListener {
 
     @Override
     public void onGuildVoiceUpdate(@NotNull GuildVoiceUpdateEvent event) {
-        if (event.getChannelJoined() != null) {
+        if (event.getChannelJoined() != null && event.getChannelLeft() != null) {
+            onGuildVoiceMove(event);
+        } else if (event.getChannelJoined() != null) {
             onGuildVoiceJoin(event);
         } else if (event.getChannelLeft() != null) {
             onGuildVoiceLeave(event);
@@ -62,6 +64,25 @@ public class VoiceUpdateEventListener extends AbstractEventListener {
                                 TextDisplay.ofFormat("Membre: %s\nSalon: %s\nDate: %s", event.getMember().getAsMention(), channel.getAsMention(), time.toString())
                         )
                 ).withAccentColor(0xFF0000)
+        );
+    }
+
+    private void onGuildVoiceMove(@NotNull GuildVoiceUpdateEvent event) {
+        Channel from = Objects.requireNonNull(event.getChannelLeft());
+        Channel to = Objects.requireNonNull(event.getChannelJoined());
+        logger.info("\"{}\" has moved from voice channel \"{}\" to \"{}\"", event.getMember().getEffectiveName(), from.getName(), to.getName());
+
+        Timestamp time = TimeFormat.DATE_TIME_SHORT.now();
+
+        sendVoiceLog(
+                Container.of(
+                        TextDisplay.of("# \uD83D\uDD00 Changement de salon vocal"),
+                        Separator.createDivider(Separator.Spacing.SMALL),
+                        Section.of(
+                                Thumbnail.fromUrl(event.getMember().getUser().getEffectiveAvatarUrl()),
+                                TextDisplay.ofFormat("Membre: %s\nDe: %s\nVers: %s\nDate: %s", event.getMember().getAsMention(), from.getAsMention(), to.getAsMention(), time.toString())
+                        )
+                ).withAccentColor(0xFFFF00)
         );
     }
 

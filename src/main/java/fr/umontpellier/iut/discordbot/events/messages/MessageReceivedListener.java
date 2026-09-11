@@ -1,7 +1,5 @@
 package fr.umontpellier.iut.discordbot.events.messages;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 import fr.umontpellier.iut.discordbot.Bot;
@@ -17,16 +15,16 @@ public class MessageReceivedListener extends AbstractEventListener {
 
 	@Override
 	public void onMessageReceived(MessageReceivedEvent event) {
-		Bot bot = getBot();
+		if (!event.isFromGuild() || event.getAuthor().isBot()) {
+			return;
+		}
 
 		Message msg = event.getMessage();
 
-		String senderId = event.getAuthor().getId();
-		String msgId = event.getMessageId();
-		OffsetDateTime timeSend = msg.getTimeCreated();
-
-		String content = msg.getContentRaw();
-
-		bot.getCachedMessages().put(msgId, new CachedMessage(senderId, content, timeSend.atZoneSameInstant(ZoneOffset.UTC)));
+		getBot().getCachedMessages().put(event.getMessageId(), new CachedMessage(
+				event.getAuthor().getId(),
+				msg.getContentRaw(),
+				msg.getTimeCreated().atZoneSameInstant(ZoneOffset.UTC)
+		));
 	}
 }

@@ -26,7 +26,7 @@ public class LogSender extends SharedBot {
 
     public void sendComponentsToChannelId(String channelId, Collection<? extends MessageTopLevelComponent> components) {
         asSendableChannel(channelId).ifPresentOrElse(
-                chan -> chan.sendMessageComponents(components).useComponentsV2().queue(),
+                chan -> chan.sendMessageComponents(components).useComponentsV2().setAllowedMentions(List.of()).queue(),
                 () -> logger.warn("Channel with ID {} not found, cannot send log message", channelId)
         );
     }
@@ -37,7 +37,7 @@ public class LogSender extends SharedBot {
 
     public void sendTextToChannelId(String channelId, String text) {
         asSendableChannel(channelId).ifPresentOrElse(
-                chan -> chan.sendMessage(text).queue(),
+                chan -> chan.sendMessage(text).setAllowedMentions(List.of()).queue(),
                 () -> logger.warn("Channel with ID {} not found, cannot send log message", channelId)
         );
     }
