@@ -29,6 +29,9 @@ public class ConfigLoader {
 		try {
 			Reader reader = new FileReader(pathToConfig);
 			this.config = gson.fromJson(reader, ConfigStructure.class);
+			if (this.config == null) {
+				throw new IllegalStateException("Config file " + pathToConfig + " is empty");
+			}
 			validateConfig();
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);

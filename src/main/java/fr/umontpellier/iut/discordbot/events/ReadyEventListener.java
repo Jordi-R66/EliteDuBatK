@@ -18,7 +18,7 @@ public class ReadyEventListener extends AbstractEventListener {
 	public void onReady(ReadyEvent event) {
 		logger.info("Bot is ready !");
 
-		getBot().getCommandManager().registerCommands();
+		getBot().getCommandManager().registerCommands(event.getJDA());
 
 		Runnable updateActivity = () -> {
 			this.logger.info("Updating activity...");

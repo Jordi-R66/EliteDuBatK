@@ -51,13 +51,17 @@ public class ConfigStructure {
     }
 
     public List<String> getRolesIdForGroup(String group) {
+        if (groups == null) {
+            return List.of();
+        }
+
         List<String> rolesId = groups.get(group);
 
         return rolesId == null ? List.of() : rolesId;
     }
 
     public List<String> getRoles() {
-        return groups.keySet().stream().toList();
+        return groups == null ? List.of() : groups.keySet().stream().toList();
     }
 
     public String getAdminRole() {
