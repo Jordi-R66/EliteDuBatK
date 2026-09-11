@@ -15,6 +15,9 @@ public class ConfigStructure {
         @SerializedName(value = "message_delete_channel")
         MESSAGE_DELETE_CHANNEL("message_delete_channel"),
 
+        @SerializedName(value = "message_edit_channel")
+        MESSAGE_EDIT_CHANNEL("message_edit_channel"),
+
         @SerializedName(value = "lock_channel")
         LOCK_CHANNEL("lock_channel"),
 
@@ -45,6 +48,7 @@ public class ConfigStructure {
             return switch (str) {
                 case "voice_channel" -> VOICE_CHANNEL;
                 case "message_delete_channel" -> MESSAGE_DELETE_CHANNEL;
+                case "message_edit_channel" -> MESSAGE_EDIT_CHANNEL;
                 case "lock_channel" -> LOCK_CHANNEL;
                 case "channel_log_channel" -> CHANNEL_LOG_CHANNEL;
                 case "role_log_channel" -> ROLE_LOG_CHANNEL;
