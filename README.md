@@ -24,6 +24,7 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 	"channels": {
 		"voice_channel": "ID_DU_SALON",
 		"message_delete_channel": "ID_DU_SALON",
+		"message_edit_channel": "ID_DU_SALON",
 		"lock_channel": "ID_DU_SALON",
 		"channel_log_channel": "ID_DU_SALON",
 		"role_log_channel": "ID_DU_SALON",
@@ -47,6 +48,7 @@ Salons de logs (`channels`) :
 |---|---|
 | `voice_channel` | Connexions, déconnexions et changements de salon vocal |
 | `message_delete_channel` | Messages supprimés (un par un ou en masse) |
+| `message_edit_channel` | Messages modifiés (ancien et nouveau contenu) |
 | `lock_channel` | Verrouillages et déverrouillages de salon (`/lock`) |
 | `channel_log_channel` | Salons créés, modifiés, supprimés, et permissions d'un salon (pour un rôle ou un membre) |
 | `role_log_channel` | Rôles créés, modifiés (dont permissions), supprimés |
