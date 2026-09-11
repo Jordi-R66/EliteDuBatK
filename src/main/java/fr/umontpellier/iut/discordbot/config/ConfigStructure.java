@@ -59,8 +59,36 @@ public class ConfigStructure {
         }
     }
 
+    /** Accès à l'API StudySuite (planning, devoirs). */
+    public static class StudySuiteConfig {
+        private String baseUrl;
+        private String apiKey;
+
+        public StudySuiteConfig() {
+        }
+
+        public StudySuiteConfig(String baseUrl, String apiKey) {
+            this.baseUrl = baseUrl;
+            this.apiKey = apiKey;
+        }
+
+        /** Vide : l'instance de l'IUT, {@code https://study-info.umontp.fr}. */
+        @Nullable
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        /** Une des clés {@code bot.apiKeys} de l'API. Vide : le bot ne lit pas la classe des membres depuis leurs rôles. */
+        @Nullable
+        public String getApiKey() {
+            return apiKey;
+        }
+    }
+
     private String token;
     private String databasePath;
+    @SerializedName(value = "studySuite", alternate = {"studysuite"})
+    private StudySuiteConfig studySuite;
 
     private String adminRole;
     private Map<String, List<String>> groups;
@@ -86,6 +114,11 @@ public class ConfigStructure {
 
     public List<String> getRoles() {
         return groups == null ? List.of() : groups.keySet().stream().toList();
+    }
+
+    @Nullable
+    public StudySuiteConfig getStudySuite() {
+        return studySuite;
     }
 
     public String getAdminRole() {

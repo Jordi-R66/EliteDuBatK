@@ -7,6 +7,7 @@ import fr.umontpellier.iut.discordbot.events.EventManager;
 import fr.umontpellier.iut.discordbot.lib.BoundedCache;
 import fr.umontpellier.iut.discordbot.lib.CachedMessage;
 import fr.umontpellier.iut.discordbot.services.LogSender;
+import fr.umontpellier.iut.discordbot.studysuite.StudySuiteClient;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -36,6 +37,8 @@ public class Bot implements Runnable {
 	private JDA jda;
 
 	private final LogSender logSender;
+	@NotNull
+	private final StudySuiteClient studySuite;
 
 	@NotNull
 	private final Map<String, CachedMessage> cachedMessages;
@@ -47,6 +50,7 @@ public class Bot implements Runnable {
 		events = new EventManager(this);
 		cachedMessages = Collections.synchronizedMap(new BoundedCache<>(MAX_CACHED_MESSAGES));
 		logSender = new LogSender(this);
+		studySuite = new StudySuiteClient(config.get().getStudySuite());
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try {
@@ -87,6 +91,11 @@ public class Bot implements Runnable {
 
 	public LogSender getLogSender() {
 		return logSender;
+	}
+
+	@NotNull
+	public StudySuiteClient getStudySuite() {
+		return studySuite;
 	}
 
 	@Override
