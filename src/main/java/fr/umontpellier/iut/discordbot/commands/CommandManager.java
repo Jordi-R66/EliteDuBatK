@@ -4,6 +4,7 @@ import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractCommand;
 import fr.umontpellier.iut.discordbot.lib.ISharedBot;
 import fr.umontpellier.iut.discordbot.lib.ObjectManager;
+import net.dv8tion.jda.api.JDA;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -20,8 +21,8 @@ public class CommandManager extends ObjectManager<AbstractCommand> implements IS
 		return super.get();
 	}
 
-	public void registerCommands() {
-		bot.getJda().updateCommands().addCommands(
+	public void registerCommands(JDA jda) {
+		jda.updateCommands().addCommands(
 				this.get().stream().map(AbstractCommand::getCommandInformation).toList()
 		).queue();
 	}
