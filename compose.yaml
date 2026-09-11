@@ -1,5 +1,6 @@
 services:
   discordbot:
+    image: ghcr.io/elite-du-bat-k/elitedubatk:devel
     build: .
     container_name: discordbot
     restart: unless-stopped
