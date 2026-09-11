@@ -75,8 +75,12 @@ public class LockCommand extends AbstractCommand {
             return;
         }
 
-        event.deferReply().queue();
         TextChannel channel = event.getChannel().asTextChannel();
+        if (replyIfLockStateIs(event, channel, true, "❌ Ce salon est déjà verrouillé.")) {
+            return;
+        }
+
+        event.deferReply().queue();
         Guild guild = guildOpt.get();
 
         CompletableFuture.runAsync(() -> {
@@ -113,8 +117,12 @@ public class LockCommand extends AbstractCommand {
             return;
         }
 
-        event.deferReply().queue();
         TextChannel channel = event.getChannel().asTextChannel();
+        if (replyIfLockStateIs(event, channel, false, "❌ Ce salon n'est pas verrouillé.")) {
+            return;
+        }
+
+        event.deferReply().queue();
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -169,6 +177,25 @@ public class LockCommand extends AbstractCommand {
                 event.getHook().editOriginal("❌ Erreur inattendue lors de la récupération de l'état.").queue();
             }
         });
+    }
+
+    /**
+     * Répond en privé si le salon est déjà dans l'état demandé, avant la réponse publique de la commande.
+     *
+     * @return true si une réponse a été envoyée
+     */
+    private boolean replyIfLockStateIs(SlashCommandInteractionEvent event, TextChannel channel, boolean locked, String message) {
+        try {
+            if (channelLockService.isChannelLocked(channel.getId()) == locked) {
+                event.reply(message).setEphemeral(true).queue();
+                return true;
+            }
+            return false;
+        } catch (ServiceException e) {
+            logger.warn("Failed to get lock state: {}", e.getMessage());
+            event.reply("❌ " + e.getMessage()).setEphemeral(true).queue();
+            return true;
+        }
     }
 
     private void sendLockLog(String title, int color, String details) {
