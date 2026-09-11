@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 import fr.umontpellier.iut.discordbot.config.ConfigStructure;
+import fr.umontpellier.iut.discordbot.studysuite.model.Assignment;
+import fr.umontpellier.iut.discordbot.studysuite.model.NewAssignment;
 import fr.umontpellier.iut.discordbot.studysuite.model.RoleMapping;
 import fr.umontpellier.iut.discordbot.studysuite.model.StudyEvent;
 import fr.umontpellier.iut.discordbot.studysuite.model.StudyGroup;
@@ -23,6 +25,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -106,12 +109,50 @@ public class StudySuiteClient {
         ));
     }
 
+    /**
+     * Les devoirs à rendre à partir de {@code from} pour les groupes du membre (ceux de son compte StudySuite), avec
+     * ce qu'il a déjà coché.
+     */
+    public List<Assignment> getAssignments(String discordUserId, Instant from) {
+        return send("GET", "/api/assignments?from=" + from, null, discordUserId,
+                new TypeToken<List<Assignment>>() {}.getType());
+    }
+
+    public Assignment createAssignment(String discordUserId, NewAssignment assignment) {
+        return send("POST", "/api/assignments", gson.toJson(assignment), discordUserId, Assignment.class);
+    }
+
+    /** Coche ou décoche un devoir pour ce membre. */
+    public void setCompleted(String discordUserId, String assignmentId, boolean done) {
+        send(done ? "POST" : "DELETE", "/api/assignments/" + URLEncoder.encode(assignmentId, StandardCharsets.UTF_8) + "/complete",
+                null, discordUserId, JsonElement.class);
+    }
+
     private <T> T getData(String path, Type type) {
+        return send("GET", path, null, null, type);
+    }
+
+    /**
+     * @param actingDiscordUserId le membre pour qui agir ({@code X-Acting-Discord-User}), ou null pour une route
+     *                            publique ou une route du bot
+     */
+    private <T> T send(String method, String path, @Nullable String jsonBody, @Nullable String actingDiscordUserId, Type type) {
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .timeout(TIMEOUT)
                 .header("Accept", "application/json")
-                .GET();
-        if (apiKey != null && path.startsWith("/api/bot/")) {
+                .method(method, jsonBody == null
+                        ? HttpRequest.BodyPublishers.noBody()
+                        : HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8));
+        if (jsonBody != null) {
+            request.header("Content-Type", "application/json");
+        }
+        if (actingDiscordUserId != null) {
+            if (apiKey == null) {
+                throw new StudySuiteException("No StudySuite API key configured, cannot act for a member");
+            }
+            request.header("Authorization", "Bot " + apiKey);
+            request.header("X-Acting-Discord-User", actingDiscordUserId);
+        } else if (apiKey != null && path.startsWith("/api/bot/")) {
             request.header("Authorization", "Bot " + apiKey);
         }
 
@@ -125,9 +166,18 @@ public class StudySuiteClient {
             throw new StudySuiteException("Interrupted while calling StudySuite", e);
         }
 
-        if (response.statusCode() != 200) {
-            logger.warn("GET {} answered {}: {}", path, response.statusCode(), response.body());
-            throw new StudySuiteException("StudySuite answered " + response.statusCode() + " on " + path);
+        int status = response.statusCode();
+        if (status < 200 || status >= 300) {
+            ApiError error = readError(response.body());
+            if ("NOT_LINKED".equals(error.code())) {
+                throw new StudySuiteNotLinkedException();
+            }
+            if (status == 403 || status == 404 || status == 400) {
+                // Refus métier (compte en attente, groupe interdit…) : le message de l'API est destiné à l'utilisateur
+                throw new StudySuiteRefusedException(status, error.code(), error.message());
+            }
+            logger.warn("{} {} answered {}: {}", method, path, status, response.body());
+            throw new StudySuiteException("StudySuite answered " + status + " on " + path);
         }
 
         try {
@@ -138,6 +188,21 @@ public class StudySuiteClient {
             return gson.fromJson(data, type);
         } catch (JsonParseException | IllegalStateException e) {
             throw new StudySuiteException("Unreadable StudySuite response to " + path, e);
+        }
+    }
+
+    private record ApiError(@Nullable String code, @Nullable String message) {
+    }
+
+    private ApiError readError(String body) {
+        try {
+            JsonObject error = gson.fromJson(body, JsonObject.class).getAsJsonObject("error");
+            return new ApiError(
+                    error.has("code") ? error.get("code").getAsString() : null,
+                    error.has("message") ? error.get("message").getAsString() : null
+            );
+        } catch (RuntimeException e) {
+            return new ApiError(null, null);
         }
     }
 

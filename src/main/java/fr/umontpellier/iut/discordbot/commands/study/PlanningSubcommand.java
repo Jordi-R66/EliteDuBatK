@@ -100,48 +100,12 @@ public class PlanningSubcommand extends StudySubcommand {
         return PlanningFormatter.day(date, groups, events, client.getBaseUrl(), planningUrl);
     }
 
-    private List<GroupRef> resolveGroups(String groupInput, Member member, GroupHierarchy hierarchy, StudySuiteClient client) {
-        if (groupInput != null && !groupInput.isBlank()) {
-            StudyGroup group = hierarchy.find(groupInput)
-                    .orElseThrow(() -> new UserFacingException("Je ne connais pas le groupe « " + groupInput + " »."));
-            return List.of(group.asRef());
-        }
-
-        if (member == null) {
-            throw new UserFacingException("Précise un groupe avec l'option `groupe`.");
-        }
-        if (!client.hasApiKey()) {
-            throw new UserFacingException("Précise un groupe avec l'option `groupe` : je ne peux pas encore lire ta classe depuis tes rôles.");
-        }
-
-        List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
-        Set<String> ids = MemberGroups.resolve(roleIds, client.getRoleMappings(member.getGuild().getId()), hierarchy);
-        if (ids.isEmpty()) {
-            throw new UserFacingException("Aucun de tes rôles n'est associé à une classe sur StudySuite. Précise un groupe avec l'option `groupe`.");
-        }
-        return ids.stream()
-                .map(id -> hierarchy.get(id).map(StudyGroup::asRef).orElse(new GroupRef(id, id, null)))
-                .toList();
-    }
-
     @Override
     public void autocomplete(CommandAutoCompleteInteractionEvent event) {
-        if (!OPTION_GROUP.equals(event.getFocusedOption().getName())) {
+        if (OPTION_GROUP.equals(event.getFocusedOption().getName())) {
+            autocompleteGroup(event);
+        } else {
             event.replyChoices(List.of()).queue();
-            return;
         }
-        String input = event.getFocusedOption().getValue();
-        async(() -> event.replyChoices(
-                getBot().getStudySuite().getHierarchy().search(input).stream()
-                        .limit(OptionData.MAX_CHOICES)
-                        .map(g -> new Command.Choice(choiceName(g), g.id()))
-                        .toList()
-        ).queue());
-    }
-
-    /** « BUT1 (BUT 1A PROMO) » quand le nom d'affichage cache celui du planning. */
-    private static String choiceName(StudyGroup group) {
-        String label = group.label();
-        return label.equals(group.internalName()) ? label : label + " (" + group.internalName() + ")";
     }
 }

@@ -4,6 +4,7 @@ import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractCommandWithAutocomplete;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -19,7 +20,9 @@ public class StudyCommand extends AbstractCommandWithAutocomplete {
     public StudyCommand(Bot bot) {
         super(bot);
         this.subcommands = List.of(
-                new PlanningSubcommand(bot)
+                new PlanningSubcommand(bot),
+                new HomeworkSubcommand(bot),
+                new AddHomeworkSubcommand(bot)
         );
     }
 
@@ -42,6 +45,16 @@ public class StudyCommand extends AbstractCommandWithAutocomplete {
     @Override
     public void autocomplete(CommandAutoCompleteInteractionEvent event) {
         find(event.getSubcommandName()).ifPresent(sub -> sub.autocomplete(event));
+    }
+
+    /** {@code study:<sous-commande>:…} */
+    @Override
+    public void onStringSelect(StringSelectInteractionEvent event) {
+        String[] parts = event.getComponentId().split(":", 3);
+        find(parts.length > 1 ? parts[1] : null).ifPresentOrElse(
+                sub -> sub.onStringSelect(event),
+                () -> event.reply("Ce menu n'est plus actif.").setEphemeral(true).queue()
+        );
     }
 
     private Optional<StudySubcommand> find(String name) {

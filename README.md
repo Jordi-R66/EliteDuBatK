@@ -71,6 +71,10 @@ Le bot a besoin de l'intent privilégié **Message Content** (Discord Developer 
 | Commande | Description |
 |---|---|
 | `/study planning [periode] [date] [groupe] [prive]` | Emploi du temps d'un jour (par défaut) ou de la semaine. `date` accepte « demain », « lundi », « vendredi prochain », « 15/09 », « 2026-09-15 » ; sans date, aujourd'hui, ou lundi le week-end. `prive` n'affiche la réponse qu'à soi. |
+| `/study devoirs [passes]` | Tes devoirs à rendre (d'après ton compte StudySuite), avec un menu pour cocher ceux qui sont faits. Toujours en privé. `passes` ajoute ceux des deux dernières semaines. |
+| `/study devoir-ajouter titre date [heure] [matiere] [description] [groupe]` | Ajoute un devoir sur StudySuite à ton nom et l'annonce dans le salon. `heure` accepte « 18h », « 8h30 », « midi » ; par défaut 23h59 (heure de Paris). |
+
+**Les devoirs se font au nom du membre.** Le bot appelle StudySuite avec sa clé et l'en-tête `X-Acting-Discord-User` : la requête compte comme celle du membre (son groupe, ses cases cochées, son nom sur les devoirs qu'il ajoute). Il faut donc un compte StudySuite lié à son Discord : sans, le bot l'invite à se connecter une fois sur le site avec Discord. StudySuite vérifie aussi que le compte est validé et qu'il a accès au groupe.
 
 **Le groupe.** Sans l'option `groupe`, c'est la classe du membre, lue depuis ses rôles : les associations rôle Discord → groupe se gèrent dans l'admin de StudySuite (celles qui valident les comptes à la connexion), et le bot les lit avec la clé `studySuite.apiKey`. Sans clé, l'option `groupe` est obligatoire. Si un membre a plusieurs rôles de classe (sa promo et son TP), c'est le plus précis qui compte.
 

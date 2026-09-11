@@ -3,6 +3,7 @@ package fr.umontpellier.iut.discordbot.studysuite;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Map;
@@ -15,7 +16,10 @@ public final class StudyDates {
     public static final ZoneId PARIS = ZoneId.of("Europe/Paris");
 
     private static final Pattern DAY_MONTH = Pattern.compile("(\\d{1,2})[/.-](\\d{1,2})(?:[/.-](\\d{2}|\\d{4}))?");
-    private static final Pattern ISO = Pattern.compile("(\\d{4})-(\\d{1,2})-(\\d{1,2})");
+    private static final Pattern TIME = Pattern.compile("(\\d{1,2})(?:[h:](\\d{2})?)");
+    /** L'heure par défaut d'un rendu : la fin de la journée. */
+    public static final LocalTime END_OF_DAY = LocalTime.of(23, 59);
+    private static final Pattern ISO =Pattern.compile("(\\d{4})-(\\d{1,2})-(\\d{1,2})");
 
     private static final Map<String, DayOfWeek> WEEKDAYS = Map.of(
             "lundi", DayOfWeek.MONDAY,
@@ -94,6 +98,29 @@ public final class StudyDates {
         }
 
         return Optional.empty();
+    }
+
+    /** Une heure tapée à la main : « 18h », « 18h30 », « 8:05 », « 23:59 », « midi », « minuit » (fin de journée). */
+    public static Optional<LocalTime> parseTime(String input) {
+        if (input == null) return Optional.empty();
+        String text = GroupHierarchy.normalize(input).replace(" ", "");
+        switch (text) {
+            case "midi" -> {
+                return Optional.of(LocalTime.NOON);
+            }
+            // Pour un rendu, « minuit » veut dire la fin de la journée, pas son début
+            case "minuit" -> {
+                return Optional.of(END_OF_DAY);
+            }
+            default -> {
+            }
+        }
+        Matcher m = TIME.matcher(text);
+        if (!m.matches()) return Optional.empty();
+        int hour = Integer.parseInt(m.group(1));
+        int minute = m.group(2) == null || m.group(2).isEmpty() ? 0 : Integer.parseInt(m.group(2));
+        if (hour > 23 || minute > 59) return Optional.empty();
+        return Optional.of(LocalTime.of(hour, minute));
     }
 
     /** Le lundi de la semaine de {@code date}. */

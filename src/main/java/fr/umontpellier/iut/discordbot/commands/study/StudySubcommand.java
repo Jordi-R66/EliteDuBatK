@@ -2,7 +2,20 @@ package fr.umontpellier.iut.discordbot.commands.study;
 
 import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.SharedBot;
+import fr.umontpellier.iut.discordbot.studysuite.GroupHierarchy;
+import fr.umontpellier.iut.discordbot.studysuite.MemberGroups;
+import fr.umontpellier.iut.discordbot.studysuite.StudySuiteClient;
 import fr.umontpellier.iut.discordbot.studysuite.StudySuiteException;
+import fr.umontpellier.iut.discordbot.studysuite.model.GroupRef;
+import fr.umontpellier.iut.discordbot.studysuite.model.StudyGroup;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import fr.umontpellier.iut.discordbot.studysuite.StudySuiteNotLinkedException;
+import fr.umontpellier.iut.discordbot.studysuite.StudySuiteRefusedException;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -13,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,6 +56,50 @@ public abstract class StudySubcommand extends SharedBot {
         return getData().getName();
     }
 
+    /**
+     * Le groupe demandé ({@code groupInput}, identifiant ou nom), ou à défaut la classe du membre d'après ses rôles.
+     */
+    protected List<GroupRef> resolveGroups(String groupInput, Member member, GroupHierarchy hierarchy, StudySuiteClient client) {
+        if (groupInput != null && !groupInput.isBlank()) {
+            StudyGroup group = hierarchy.find(groupInput)
+                    .orElseThrow(() -> new UserFacingException("Je ne connais pas le groupe « " + groupInput + " »."));
+            return List.of(group.asRef());
+        }
+
+        if (member == null) {
+            throw new UserFacingException("Précise un groupe avec l'option `groupe`.");
+        }
+        if (!client.hasApiKey()) {
+            throw new UserFacingException("Précise un groupe avec l'option `groupe` : je ne peux pas encore lire ta classe depuis tes rôles.");
+        }
+
+        List<String> roleIds = member.getRoles().stream().map(Role::getId).toList();
+        Set<String> ids = MemberGroups.resolve(roleIds, client.getRoleMappings(member.getGuild().getId()), hierarchy);
+        if (ids.isEmpty()) {
+            throw new UserFacingException("Aucun de tes rôles n'est associé à une classe sur StudySuite. Précise un groupe avec l'option `groupe`.");
+        }
+        return ids.stream()
+                .map(id -> hierarchy.get(id).map(StudyGroup::asRef).orElse(new GroupRef(id, id, null)))
+                .toList();
+    }
+
+    /** Propose les groupes visibles dont le nom contient ce qui est tapé. */
+    protected void autocompleteGroup(CommandAutoCompleteInteractionEvent event) {
+        String input = event.getFocusedOption().getValue();
+        async(() -> event.replyChoices(
+                getBot().getStudySuite().getHierarchy().search(input).stream()
+                        .limit(OptionData.MAX_CHOICES)
+                        .map(g -> new Command.Choice(choiceName(g), g.id()))
+                        .toList()
+        ).queue());
+    }
+
+    /** « BUT1 (BUT 1A PROMO) » quand le nom d'affichage cache celui du planning. */
+    private static String choiceName(StudyGroup group) {
+        String label = group.label();
+        return label.equals(group.internalName()) ? label : label + " (" + group.internalName() + ")";
+    }
+
     /** Une erreur à montrer telle quelle, à la seule personne qui a lancé la commande. */
     protected static class UserFacingException extends RuntimeException {
         public UserFacingException(String message) {
@@ -57,19 +115,72 @@ public abstract class StudySubcommand extends SharedBot {
      * l'auteur voit, même si la réponse prévue était publique.
      */
     protected void replyLater(SlashCommandInteractionEvent event, boolean ephemeral, EmbedTask task) {
+        replyLaterWith(event, ephemeral, () -> MessageEditData.fromEmbeds(task.run()));
+    }
+
+    /** Comme {@link #replyLater}, pour une réponse qui porte aussi des composants (menus, boutons). */
+    protected void replyLaterWith(SlashCommandInteractionEvent event, boolean ephemeral, MessageTask task) {
         event.deferReply(ephemeral).queue(hook -> EXECUTOR.execute(() -> {
             try {
-                hook.editOriginalEmbeds(task.run()).queue();
-            } catch (UserFacingException e) {
-                replyError(hook, ephemeral, e.getMessage());
-            } catch (StudySuiteException e) {
-                logger.warn("StudySuite call failed: {}", e.getMessage());
-                replyError(hook, ephemeral, "StudySuite ne répond pas pour l'instant, réessaie dans un moment.");
+                hook.editOriginal(task.run()).queue();
             } catch (RuntimeException e) {
-                logger.error("Unexpected error in /study {}", getName(), e);
-                replyError(hook, ephemeral, "Une erreur inattendue est survenue.");
+                replyError(hook, ephemeral, errorMessage(e));
             }
         }));
+    }
+
+    /** Un menu déroulant de cette sous-commande ({@code study:<sous-commande>:…}). */
+    public void onStringSelect(StringSelectInteractionEvent event) {
+        event.reply("Ce menu n'est plus actif.").setEphemeral(true).queue();
+    }
+
+    /**
+     * Met à jour le message du menu : l'interaction est acquittée tout de suite, {@code task} tourne hors du thread
+     * de JDA, et une erreur est signalée à part, sans toucher au message.
+     */
+    protected void editLater(StringSelectInteractionEvent event, MessageTask task) {
+        event.deferEdit().queue(hook -> EXECUTOR.execute(() -> {
+            try {
+                hook.editOriginal(task.run()).queue();
+            } catch (RuntimeException e) {
+                hook.sendMessage("❌ " + errorMessage(e)).setEphemeral(true).queue();
+            }
+        }));
+    }
+
+    /** Ce qu'on dit à l'utilisateur quand {@code e} interrompt sa commande. */
+    protected String errorMessage(RuntimeException e) {
+        String site = getBot().getStudySuite().getBaseUrl();
+        return switch (e) {
+            case UserFacingException u -> u.getMessage();
+            case StudySuiteNotLinkedException ignored ->
+                    "Ton compte Discord n'est pas encore lié à StudySuite : connecte-toi une fois avec Discord sur "
+                            + site + "/login, puis réessaie.";
+            case StudySuiteRefusedException r -> refusalMessage(r);
+            case StudySuiteException s -> {
+                logger.warn("StudySuite call failed: {}", s.getMessage());
+                yield "StudySuite ne répond pas pour l'instant, réessaie dans un moment.";
+            }
+            default -> {
+                logger.error("Unexpected error in /study {}", getName(), e);
+                yield "Une erreur inattendue est survenue.";
+            }
+        };
+    }
+
+    /** Les refus de l'API sont en anglais : on traduit ceux qu'on connaît. */
+    private static String refusalMessage(StudySuiteRefusedException e) {
+        String message = e.getMessage() == null ? "" : e.getMessage();
+        if (message.equals("Account not approved")) {
+            return "Ton compte StudySuite n'est pas encore validé par un admin.";
+        }
+        if (message.startsWith("Access denied")) {
+            return "Ton compte StudySuite n'a pas accès à ce groupe.";
+        }
+        if ("NOT_FOUND".equals(e.getCode())) {
+            return "Introuvable sur StudySuite (supprimé entre-temps ?).";
+        }
+        return "StudySuite a refusé : " + message;
     }
 
     /** Lance {@code task} hors du thread de JDA (autocomplétion qui a besoin de StudySuite). */
@@ -95,5 +206,10 @@ public abstract class StudySubcommand extends SharedBot {
     @FunctionalInterface
     protected interface EmbedTask {
         MessageEmbed run();
+    }
+
+    @FunctionalInterface
+    protected interface MessageTask {
+        MessageEditData run();
     }
 }

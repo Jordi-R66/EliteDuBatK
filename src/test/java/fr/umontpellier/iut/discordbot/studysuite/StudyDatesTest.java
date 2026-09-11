@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,6 +43,27 @@ class StudyDatesTest {
     @ValueSource(strings = {"", "  ", "bientôt", "31/02", "13/13", "2026-02-30"})
     void rejectsTheRest(String input) {
         assertTrue(StudyDates.parse(input, TODAY).isEmpty());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "18h, 18:00",
+            "18h30, 18:30",
+            "8h05, 08:05",
+            "8:05, 08:05",
+            "23:59, 23:59",
+            "18 h 30, 18:30",
+            "midi, 12:00",
+            "minuit, 23:59",
+    })
+    void parsesTimes(String input, LocalTime expected) {
+        assertEquals(expected, StudyDates.parseTime(input).orElseThrow());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "18", "24h", "18h60", "18h5", "demain", "6pm"})
+    void rejectsOtherTimes(String input) {
+        assertTrue(StudyDates.parseTime(input).isEmpty(), input);
     }
 
     @Test
