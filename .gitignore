@@ -181,3 +181,4 @@ dev.config.json
 *.db
 
 null
+data/
