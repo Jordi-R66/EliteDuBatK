@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -57,46 +58,53 @@ public class MigrateFirstYearCommand extends AbstractCommand {
 
 	@Override
 	public void execute(SlashCommandInteractionEvent event) {
-		Guild guild = event.getGuild();
-		OptionMapping q1Opt = event.getOption(Q1_FILE);
-		OptionMapping q2Opt = event.getOption(Q2_FILE);
-		OptionMapping q3Opt = event.getOption(Q3_FILE);
-		OptionMapping q4Opt = event.getOption(Q4_FILE);
+		Member member = Objects.requireNonNull(event.getMember());
 
-		boolean isValid = (guild != null && q1Opt != null && q2Opt != null && q3Opt != null && q4Opt != null);
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			Guild guild = event.getGuild();
 
-		if (isValid) {
-			event.deferReply(false).queue();
+			OptionMapping q1Opt = event.getOption(Q1_FILE);
+			OptionMapping q2Opt = event.getOption(Q2_FILE);
+			OptionMapping q3Opt = event.getOption(Q3_FILE);
+			OptionMapping q4Opt = event.getOption(Q4_FILE);
 
-			CompletableFuture<List<String>> q1Future = downloadEmails(q1Opt);
-			CompletableFuture<List<String>> q2Future = downloadEmails(q2Opt);
-			CompletableFuture<List<String>> q3Future = downloadEmails(q3Opt);
-			CompletableFuture<List<String>> q4Future = downloadEmails(q4Opt);
+			boolean isValid = (guild != null && q1Opt != null && q2Opt != null && q3Opt != null && q4Opt != null);
 
-			CompletableFuture.allOf(q1Future, q2Future, q3Future, q4Future).whenComplete((ignored, exception) -> {
-				boolean hasDownloadError = (exception != null);
+			if (isValid) {
+				event.deferReply(false).queue();
 
-				if (hasDownloadError) {
-					event.getHook().sendMessage("Erreur lors du téléchargement des fichiers.").queue();
-				}
+				CompletableFuture<List<String>> q1Future = downloadEmails(q1Opt);
+				CompletableFuture<List<String>> q2Future = downloadEmails(q2Opt);
+				CompletableFuture<List<String>> q3Future = downloadEmails(q3Opt);
+				CompletableFuture<List<String>> q4Future = downloadEmails(q4Opt);
 
-				if (!hasDownloadError) {
-					List<String> q1Emails = q1Future.join();
-					List<String> q2Emails = q2Future.join();
-					List<String> q3Emails = q3Future.join();
-					List<String> q4Emails = q4Future.join();
+				CompletableFuture.allOf(q1Future, q2Future, q3Future, q4Future).whenComplete((ignored, exception) -> {
+					boolean hasDownloadError = (exception != null);
 
-					guild.loadMembers().onSuccess(members -> {
-						processMigration(guild, members, q1Emails, q2Emails, q3Emails, q4Emails, event);
-					}).onError(error -> {
-						event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
-					});
-				}
-			});
-		}
+					if (hasDownloadError) {
+						event.getHook().sendMessage("Erreur lors du téléchargement des fichiers.").queue();
+					}
 
-		if (!isValid) {
-			event.reply("Paramètres invalides ou serveur inaccessible.").setEphemeral(true).queue();
+					if (!hasDownloadError) {
+						List<String> q1Emails = q1Future.join();
+						List<String> q2Emails = q2Future.join();
+						List<String> q3Emails = q3Future.join();
+						List<String> q4Emails = q4Future.join();
+
+						guild.loadMembers().onSuccess(members -> {
+							processMigration(guild, members, q1Emails, q2Emails, q3Emails, q4Emails, event);
+						}).onError(error -> {
+							event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
+						});
+					}
+				});
+			}
+
+			if (!isValid) {
+				event.reply("Paramètres invalides ou serveur inaccessible.").setEphemeral(true).queue();
+			}
+		} else {
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
 		}
 	}
 

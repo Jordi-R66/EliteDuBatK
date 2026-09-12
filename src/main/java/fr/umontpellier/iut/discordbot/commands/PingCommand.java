@@ -1,6 +1,7 @@
 package fr.umontpellier.iut.discordbot.commands;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractCommand;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -29,11 +30,17 @@ public class PingCommand extends AbstractCommand {
 
 	@Override
 	public void execute(SlashCommandInteractionEvent event) {
-		if (event.getOption("ephemeral") != null
-				&& Objects.requireNonNull(event.getOption("ephemeral")).getAsBoolean()) {
-			event.reply("Pong!").setEphemeral(true).queue();
+		Member member = Objects.requireNonNull(event.getMember());
+
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			if (event.getOption("ephemeral") != null
+					&& Objects.requireNonNull(event.getOption("ephemeral")).getAsBoolean()) {
+				event.reply("Pong!").setEphemeral(true).queue();
+			} else {
+				event.reply("Pong!").queue();
+			}
 		} else {
-			event.reply("Pong!").queue();
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
 		}
 	}
 }

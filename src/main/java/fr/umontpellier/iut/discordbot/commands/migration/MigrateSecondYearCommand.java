@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+
+import javax.annotation.Nonnull;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -40,21 +43,27 @@ public class MigrateSecondYearCommand extends AbstractCommand {
 
 	@Override
 	public void execute(SlashCommandInteractionEvent event) {
-		Guild guild = event.getGuild();
-		boolean isValid = (guild != null);
+		Member member = Objects.requireNonNull(event.getMember());
 
-		if (isValid) {
-			event.deferReply(false).queue();
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			Guild guild = event.getGuild();
+			boolean isValid = (guild != null);
 
-			guild.loadMembers().onSuccess(members -> {
-				processMigration(guild, members, event);
-			}).onError(error -> {
-				event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
-			});
-		}
+			if (isValid) {
+				event.deferReply(false).queue();
 
-		if (!isValid) {
-			event.reply("Serveur introuvable.").setEphemeral(true).queue();
+				guild.loadMembers().onSuccess(members -> {
+					processMigration(guild, members, event);
+				}).onError(error -> {
+					event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
+				});
+			}
+
+			if (!isValid) {
+				event.reply("Serveur introuvable.").setEphemeral(true).queue();
+			}
+		} else {
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
 		}
 	}
 

@@ -21,67 +21,72 @@ import java.util.Objects;
 
 public class PingGroupCommand extends AbstractCommandWithAutocomplete {
 
-    public PingGroupCommand(Bot bot) {
-        super(bot);
-    }
+	public PingGroupCommand(Bot bot) {
+		super(bot);
+	}
 
-    @NotNull
-    @Override
-    public SlashCommandData getCommandInformation() {
-        return Commands.slash("ping-group", "Mentionner un groupe")
-                .addOption(OptionType.STRING, "group", "Le groupe à mentionner", true, true)
-                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR));
-    }
+	@NotNull
+	@Override
+	public SlashCommandData getCommandInformation() {
+		return Commands.slash("ping-group", "Mentionner un groupe")
+				.addOption(OptionType.STRING, "group", "Le groupe à mentionner", true, true)
+				.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR));
+	}
 
-    @Override
-    public void execute(SlashCommandInteractionEvent event) {
-        Member member = Objects.requireNonNull(event.getMember());
-        Guild guild = Objects.requireNonNull(event.getGuild());
-        String group = Objects.requireNonNull(event.getOption("group")).getAsString();
+	@Override
+	public void execute(SlashCommandInteractionEvent event) {
+		Member member = Objects.requireNonNull(event.getMember());
 
-        logger.debug("User {} wants to ping group {}", member.getId(), group);
-        logger.debug("Available groups are {}", getBot().getConfig().get().getRoles());
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			Guild guild = Objects.requireNonNull(event.getGuild());
+			String group = Objects.requireNonNull(event.getOption("group")).getAsString();
 
-        List<String> correspondingGroup = getCorrespondingGroup(group);
-        if (correspondingGroup.isEmpty()) {
-            event.reply("Je n'ai pas trouvé le groupe demandé").setEphemeral(true).queue();
-            return;
-        }
+			logger.debug("User {} wants to ping group {}", member.getId(), group);
+			logger.debug("Available groups are {}", getBot().getConfig().get().getRoles());
 
-        List<String> mentions = correspondingGroup.stream()
-                .map(guild::getRoleById)
-                .filter(Objects::nonNull)
-                .map(Role::getAsMention)
-                .toList();
+			List<String> correspondingGroup = getCorrespondingGroup(group);
+			if (correspondingGroup.isEmpty()) {
+				event.reply("Je n'ai pas trouvé le groupe demandé").setEphemeral(true).queue();
+				return;
+			}
 
-        event.reply(String.format("%s veut mentionner %s", member.getAsMention(),
-                Utils.joinWithLastDifferent(", ", " et ", mentions))).queue();
-    }
+			List<String> mentions = correspondingGroup.stream()
+					.map(guild::getRoleById)
+					.filter(Objects::nonNull)
+					.map(Role::getAsMention)
+					.toList();
 
-    @Override
-    public void autocomplete(CommandAutoCompleteInteractionEvent event) {
-        String inputGroup = Objects.requireNonNull(event.getOption("group")).getAsString();
+			event.reply(String.format("%s veut mentionner %s", member.getAsMention(),
+					Utils.joinWithLastDifferent(", ", " et ", mentions))).queue();
+		} else {
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
+		}
+	}
 
-        List<String> correspondingGroups = getBot().getConfig().get().getRoles().stream()
-                .filter(group -> group.contains(inputGroup.toLowerCase()))
-                .toList();
+	@Override
+	public void autocomplete(CommandAutoCompleteInteractionEvent event) {
+		String inputGroup = Objects.requireNonNull(event.getOption("group")).getAsString();
 
-        event.replyChoices(
-                correspondingGroups
-                        .stream()
-                        .map(group -> new Command.Choice(group, group))
-                        .toList())
-                .queue();
-    }
+		List<String> correspondingGroups = getBot().getConfig().get().getRoles().stream()
+				.filter(group -> group.contains(inputGroup.toLowerCase()))
+				.toList();
 
-    private List<String> getCorrespondingGroup(String group) {
-        return getBot().getConfig()
-                .get()
-                .getRoles()
-                .stream()
-                .filter(g -> g.contains(group))
-                .findFirst()
-                .map(matchingGroup -> getBot().getConfig().get().getRolesIdForGroup(matchingGroup))
-                .orElse(List.of());
-    }
+		event.replyChoices(
+				correspondingGroups
+						.stream()
+						.map(group -> new Command.Choice(group, group))
+						.toList())
+				.queue();
+	}
+
+	private List<String> getCorrespondingGroup(String group) {
+		return getBot().getConfig()
+				.get()
+				.getRoles()
+				.stream()
+				.filter(g -> g.contains(group))
+				.findFirst()
+				.map(matchingGroup -> getBot().getConfig().get().getRolesIdForGroup(matchingGroup))
+				.orElse(List.of());
+	}
 }

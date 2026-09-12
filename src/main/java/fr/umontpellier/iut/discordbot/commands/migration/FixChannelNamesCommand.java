@@ -4,6 +4,7 @@ import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -15,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class FixChannelNamesCommand extends AbstractCommand {
@@ -32,16 +34,22 @@ public class FixChannelNamesCommand extends AbstractCommand {
 
 	@Override
 	public void execute(SlashCommandInteractionEvent event) {
-		Guild guild = event.getGuild();
-		boolean isValid = (guild != null);
+		Member member = Objects.requireNonNull(event.getMember());
 
-		if (isValid) {
-			event.deferReply(false).queue();
-			processFix(guild, event);
-		}
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			Guild guild = event.getGuild();
+			boolean isValid = (guild != null);
 
-		if (!isValid) {
-			event.reply("Serveur introuvable.").setEphemeral(true).queue();
+			if (isValid) {
+				event.deferReply(false).queue();
+				processFix(guild, event);
+			}
+
+			if (!isValid) {
+				event.reply("Serveur introuvable.").setEphemeral(true).queue();
+			}
+		} else {
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
 		}
 	}
 

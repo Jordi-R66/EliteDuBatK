@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -43,25 +44,32 @@ public class FixAnciensYearCommand extends AbstractCommand {
 
 	@Override
 	public void execute(SlashCommandInteractionEvent event) {
-		Guild guild = event.getGuild();
-		boolean isValid = (guild != null);
 
-		if (isValid) {
-			System.out.println("[DEBUG] Starting fix_anciens_year on guild: " + guild.getName());
-			event.deferReply(false).queue();
+		Member member = Objects.requireNonNull(event.getMember());
 
-			guild.loadMembers().onSuccess(members -> {
-				System.out.println("[DEBUG] Loaded " + members.size() + " members from guild.");
-				processFix(guild, members, event);
-			}).onError(error -> {
-				System.err.println("[DEBUG] Error loading members: " + error.getMessage());
-				event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
-			});
-		}
+		if (member.hasPermission(Permission.ADMINISTRATOR)) {
+			Guild guild = event.getGuild();
+			boolean isValid = (guild != null);
 
-		if (!isValid) {
-			System.err.println("[DEBUG] Guild is null, aborting command.");
-			event.reply("Serveur introuvable.").setEphemeral(true).queue();
+			if (isValid) {
+				System.out.println("[DEBUG] Starting fix_anciens_year on guild: " + guild.getName());
+				event.deferReply(false).queue();
+
+				guild.loadMembers().onSuccess(members -> {
+					System.out.println("[DEBUG] Loaded " + members.size() + " members from guild.");
+					processFix(guild, members, event);
+				}).onError(error -> {
+					System.err.println("[DEBUG] Error loading members: " + error.getMessage());
+					event.getHook().sendMessage("Erreur lors du chargement des membres.").queue();
+				});
+			}
+
+			if (!isValid) {
+				System.err.println("[DEBUG] Guild is null, aborting command.");
+				event.reply("Serveur introuvable.").setEphemeral(true).queue();
+			}
+		} else {
+			event.reply("T'as pas le droit de faire cette commande.").setEphemeral(true).queue();
 		}
 	}
 
