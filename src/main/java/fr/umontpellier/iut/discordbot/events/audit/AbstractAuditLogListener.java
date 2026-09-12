@@ -49,7 +49,7 @@ public abstract class AbstractAuditLogListener extends AbstractEventListener {
 
 	protected abstract void handle(@NotNull AuditLogEntry entry);
 
-	protected void sendLog(ConfigStructure.LogChannel channel, String title, int accentColor, String details) {
+	protected void sendLog(ConfigStructure.SystemChannel channel, String title, int accentColor, String details) {
 		getBot().getLogSender().sendLog(channel, title, accentColor, details);
 	}
 

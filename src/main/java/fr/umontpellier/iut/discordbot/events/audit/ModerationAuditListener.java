@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events.audit;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogChange;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
@@ -24,9 +24,9 @@ public class ModerationAuditListener extends AbstractAuditLogListener {
 		String member = "Membre : <@" + entry.getTargetId() + "> (" + entry.getTargetId() + ")";
 
 		switch (entry.getType()) {
-			case BAN -> sendLog(LogChannel.MODERATION_CHANNEL, "# 🔨 Bannissement", 0x8B0000, member + footer(entry));
-			case UNBAN -> sendLog(LogChannel.MODERATION_CHANNEL, "# 🔓 Débannissement", 0x00FF00, member + footer(entry));
-			case KICK -> sendLog(LogChannel.MODERATION_CHANNEL, "# 👢 Expulsion", 0xFF8800, member + footer(entry));
+			case BAN -> sendLog(SystemChannel.MODERATION_CHANNEL, "# 🔨 Bannissement", 0x8B0000, member + footer(entry));
+			case UNBAN -> sendLog(SystemChannel.MODERATION_CHANNEL, "# 🔓 Débannissement", 0x00FF00, member + footer(entry));
+			case KICK -> sendLog(SystemChannel.MODERATION_CHANNEL, "# 👢 Expulsion", 0xFF8800, member + footer(entry));
 			case MEMBER_UPDATE -> handleTimeout(entry, member);
 			default -> {
 			}
@@ -40,12 +40,12 @@ public class ModerationAuditListener extends AbstractAuditLogListener {
 		}
 
 		if (timeout.getNewValue() == null) {
-			sendLog(LogChannel.MODERATION_CHANNEL, "# ⏱️ Fin d'exclusion temporaire", 0x00FF00, member + footer(entry));
+			sendLog(SystemChannel.MODERATION_CHANNEL, "# ⏱️ Fin d'exclusion temporaire", 0x00FF00, member + footer(entry));
 			return;
 		}
 
 		OffsetDateTime until = OffsetDateTime.parse(timeout.getNewValue().toString());
-		sendLog(LogChannel.MODERATION_CHANNEL, "# ⏱️ Exclusion temporaire", 0x9B59B6,
+		sendLog(SystemChannel.MODERATION_CHANNEL, "# ⏱️ Exclusion temporaire", 0x9B59B6,
 				member
 						+ "\nJusqu'au : " + TimeFormat.DATE_TIME_SHORT.format(until)
 						+ " (" + TimeFormat.RELATIVE.format(until) + ")"

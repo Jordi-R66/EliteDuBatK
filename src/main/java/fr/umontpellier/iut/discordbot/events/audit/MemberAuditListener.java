@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events.audit;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AuditLogFormatter;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogChange;
@@ -31,7 +31,7 @@ public class MemberAuditListener extends AbstractAuditLogListener {
 				details.append("\nRetirés : ").append(AuditLogFormatter.roleMentions(newValue(entry, "$remove")));
 			}
 
-			sendLog(LogChannel.MEMBER_LOG_CHANNEL, "# 🏷️ Rôles modifiés", 0xFFFF00,
+			sendLog(SystemChannel.MEMBER_LOG_CHANNEL, "# 🏷️ Rôles modifiés", 0xFFFF00,
 					details + footer(entry));
 			return;
 		}
@@ -42,7 +42,7 @@ public class MemberAuditListener extends AbstractAuditLogListener {
 		}
 
 		String by = entry.getUserId().equals(entry.getTargetId()) ? "\n*(modifié par le membre lui-même)*" : "";
-		sendLog(LogChannel.MEMBER_LOG_CHANNEL, "# 📝 Pseudo modifié", 0xFFFF00,
+		sendLog(SystemChannel.MEMBER_LOG_CHANNEL, "# 📝 Pseudo modifié", 0xFFFF00,
 				"Membre : " + member
 						+ "\nPseudo : " + AuditLogFormatter.change(nick.getOldValue(), nick.getNewValue())
 						+ by

@@ -3,7 +3,7 @@ package fr.umontpellier.iut.discordbot.events.messages;
 import java.time.ZoneOffset;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AbstractEventListener;
 import fr.umontpellier.iut.discordbot.lib.CachedMessage;
 import fr.umontpellier.iut.discordbot.lib.DeleteLogFormatter;
@@ -57,7 +57,7 @@ public class MessageUpdateListener extends AbstractEventListener {
 				quote(newContent));
 
 		logger.info("Message {} from {} edited in \"{}\"", event.getMessageId(), event.getAuthor().getId(), event.getChannel().getName());
-		getBot().getLogSender().sendLog(LogChannel.MESSAGE_EDIT_CHANNEL, "# ✏️ Message modifié", 0xFFFF00, details);
+		getBot().getLogSender().sendLog(SystemChannel.MESSAGE_EDIT_CHANNEL, "# ✏️ Message modifié", 0xFFFF00, details);
 	}
 
 	private static String quote(String content) {

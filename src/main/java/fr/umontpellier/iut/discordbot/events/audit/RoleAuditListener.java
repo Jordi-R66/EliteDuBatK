@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events.audit;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AuditLogFormatter;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogChange;
@@ -37,12 +37,12 @@ public class RoleAuditListener extends AbstractAuditLogListener {
 		String role = "<@&" + entry.getTargetId() + ">";
 
 		switch (entry.getType()) {
-			case ROLE_CREATE -> sendLog(LogChannel.ROLE_LOG_CHANNEL, "# ➕ Rôle créé", 0x00FF00,
+			case ROLE_CREATE -> sendLog(SystemChannel.ROLE_LOG_CHANNEL, "# ➕ Rôle créé", 0x00FF00,
 					"Rôle : " + role
 							+ "\nNom : " + AuditLogFormatter.value(newValue(entry, "name"))
 							+ "\nPermissions : " + AuditLogFormatter.permissionList(AuditLogFormatter.toLong(newValue(entry, "permissions")))
 							+ footer(entry));
-			case ROLE_DELETE -> sendLog(LogChannel.ROLE_LOG_CHANNEL, "# ➖ Rôle supprimé", 0xFF0000,
+			case ROLE_DELETE -> sendLog(SystemChannel.ROLE_LOG_CHANNEL, "# ➖ Rôle supprimé", 0xFF0000,
 					"Nom : " + AuditLogFormatter.value(oldValue(entry, "name"))
 							+ "\nPermissions : " + AuditLogFormatter.permissionList(AuditLogFormatter.toLong(oldValue(entry, "permissions")))
 							+ footer(entry));
@@ -52,7 +52,7 @@ public class RoleAuditListener extends AbstractAuditLogListener {
 					return;
 				}
 
-				sendLog(LogChannel.ROLE_LOG_CHANNEL, "# ✏️ Rôle modifié", 0xFFFF00,
+				sendLog(SystemChannel.ROLE_LOG_CHANNEL, "# ✏️ Rôle modifié", 0xFFFF00,
 						"Rôle : " + role + "\n\n" + String.join("\n", changes) + footer(entry));
 			}
 			default -> {

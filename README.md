@@ -29,7 +29,8 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 		"channel_log_channel": "ID_DU_SALON",
 		"role_log_channel": "ID_DU_SALON",
 		"member_log_channel": "ID_DU_SALON",
-		"moderation_channel": "ID_DU_SALON"
+		"moderation_channel": "ID_DU_SALON",
+		"honeypot_channel": "ID_DU_SALON"
 	},
 	"studySuite": {
 		"baseUrl": "https://study-info.umontp.fr",
@@ -47,18 +48,19 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 | `channels` | Salons de logs. Plusieurs clés peuvent pointer vers le même salon ; une clé absente ou vide désactive ce log (avertissement au démarrage). |
 | `studySuite` | Accès à [StudySuite](#studysuite). `baseUrl` vide : `https://study-info.umontp.fr`. `apiKey` : une des clés `bot.apiKeys` de l'API, à ne jamais commiter. |
 
-Salons de logs (`channels`) :
+Salons importants (logs, usage réservé) (`channels`) :
 
 | Clé | Contenu |
 |---|---|
-| `voice_channel` | Connexions, déconnexions et changements de salon vocal |
-| `message_delete_channel` | Messages supprimés (un par un ou en masse) |
-| `message_edit_channel` | Messages modifiés (ancien et nouveau contenu) |
-| `lock_channel` | Verrouillages et déverrouillages de salon (`/lock`) |
-| `channel_log_channel` | Salons créés, modifiés, supprimés, et permissions d'un salon (pour un rôle ou un membre) |
-| `role_log_channel` | Rôles créés, modifiés (dont permissions), supprimés |
-| `member_log_channel` | Rôles et pseudo des membres, départs |
-| `moderation_channel` | Bannissements, expulsions, exclusions temporaires (et leur levée) |
+| `voice_channel` | LOGS Connexions, déconnexions et changements de salon vocal |
+| `message_delete_channel` | LOGS Messages supprimés (un par un ou en masse) |
+| `message_edit_channel` | LOGS Messages modifiés (ancien et nouveau contenu) |
+| `lock_channel` | LOGS Verrouillages et déverrouillages de salon (`/lock`) |
+| `channel_log_channel` | LOGS Salons créés, modifiés, supprimés, et permissions d'un salon (pour un rôle ou un membre) |
+| `role_log_channel` | LOGS Rôles créés, modifiés (dont permissions), supprimés |
+| `member_log_channel` | LOGS Rôles et pseudo des membres, départs |
+| `moderation_channel` | LOGS Bannissements, expulsions, exclusions temporaires (et leur levée) |
+| `honeypot_channel` | Tout message écrit ici provoque le bannissement de son auteur |
 
 Les logs de salons, rôles, membres et sanctions viennent du journal d'audit Discord : ils indiquent l'auteur de l'action et la raison éventuelle. Le bot a besoin de la permission **Voir les logs du serveur**. Les actions faites par le bot lui-même (ex. `/lock`) n'y sont pas journalisées, elles ont leurs propres logs.
 
@@ -87,6 +89,7 @@ Le bot a besoin de l'intent privilégié **Message Content** (Discord Developer 
 ## Docker
 
 ```sh
+docker compose pull
 docker compose up -d
 ```
 

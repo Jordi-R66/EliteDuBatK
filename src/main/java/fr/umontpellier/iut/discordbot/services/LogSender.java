@@ -39,7 +39,7 @@ public class LogSender extends SharedBot {
     /**
      * Envoie un log (titre + texte) dans le salon de logs configuré, s'il existe.
      */
-    public void sendLog(ConfigStructure.LogChannel logChannel, String title, int accentColor, String details) {
+    public void sendLog(ConfigStructure.SystemChannel logChannel, String title, int accentColor, String details) {
         String channelId = getBot().getConfig().get().getChannelId(logChannel);
         if (channelId == null || channelId.isBlank()) {
             logger.warn("No {} configured; skipping Discord log message", logChannel);

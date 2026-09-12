@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events.audit;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AuditLogFormatter;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogChange;
@@ -43,13 +43,13 @@ public class ChannelAuditListener extends AbstractAuditLogListener {
 		String channel = "<#" + entry.getTargetId() + ">";
 
 		switch (entry.getType()) {
-			case CHANNEL_CREATE -> sendLog(LogChannel.CHANNEL_LOG_CHANNEL, "# ➕ Salon créé", 0x00FF00,
+			case CHANNEL_CREATE -> sendLog(SystemChannel.CHANNEL_LOG_CHANNEL, "# ➕ Salon créé", 0x00FF00,
 					"Salon : " + channel
 							+ "\nNom : " + AuditLogFormatter.value(newValue(entry, "name"))
 							+ "\nType : " + AuditLogFormatter.channelType(newValue(entry, "type"))
 							+ parent(createdParentId(entry))
 							+ footer(entry));
-			case CHANNEL_DELETE -> sendLog(LogChannel.CHANNEL_LOG_CHANNEL, "# ➖ Salon supprimé", 0xFF0000,
+			case CHANNEL_DELETE -> sendLog(SystemChannel.CHANNEL_LOG_CHANNEL, "# ➖ Salon supprimé", 0xFF0000,
 					"Nom : " + AuditLogFormatter.value(oldValue(entry, "name"))
 							+ "\nType : " + AuditLogFormatter.channelType(oldValue(entry, "type"))
 							+ parent(oldValue(entry, "parent_id"))
@@ -60,7 +60,7 @@ public class ChannelAuditListener extends AbstractAuditLogListener {
 					return;
 				}
 
-				sendLog(LogChannel.CHANNEL_LOG_CHANNEL, "# ✏️ Salon modifié", 0xFFFF00,
+				sendLog(SystemChannel.CHANNEL_LOG_CHANNEL, "# ✏️ Salon modifié", 0xFFFF00,
 						"Salon : " + channel + "\n\n" + String.join("\n", changes) + footer(entry));
 			}
 			default -> {

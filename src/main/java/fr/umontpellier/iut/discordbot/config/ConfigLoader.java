@@ -44,12 +44,12 @@ public class ConfigLoader {
 		if (channels != null) {
 			for (String key : channels.keySet()) {
 				if (!isKnownChannelKey(key)) {
-					logger.warn("Unknown channel key '{}' in config; expected keys are {}", key, Arrays.toString(ConfigStructure.LogChannel.values()));
+					logger.warn("Unknown channel key '{}' in config; expected keys are {}", key, Arrays.toString(ConfigStructure.SystemChannel.values()));
 				}
 			}
 		}
 
-		for (ConfigStructure.LogChannel channel : ConfigStructure.LogChannel.values()) {
+		for (ConfigStructure.SystemChannel channel : ConfigStructure.SystemChannel.values()) {
 			String channelId = config.getChannelId(channel);
 			if (channelId == null) {
 				logger.warn("Channel '{}' is not configured in the config file", channel);
@@ -60,7 +60,7 @@ public class ConfigLoader {
 	}
 
 	private boolean isKnownChannelKey(String key) {
-		for (ConfigStructure.LogChannel channel : ConfigStructure.LogChannel.values()) {
+		for (ConfigStructure.SystemChannel channel : ConfigStructure.SystemChannel.values()) {
 			if (channel.toString().equals(key) || channel.name().equals(key)) {
 				return true;
 			}

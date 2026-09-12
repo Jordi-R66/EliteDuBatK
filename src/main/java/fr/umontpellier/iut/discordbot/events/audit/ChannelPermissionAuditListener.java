@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events.audit;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AuditLogFormatter;
 import net.dv8tion.jda.api.audit.ActionType;
 import net.dv8tion.jda.api.audit.AuditLogEntry;
@@ -38,7 +38,7 @@ public class ChannelPermissionAuditListener extends AbstractAuditLogListener {
 
 		String diff = AuditLogFormatter.overrideDiff(oldAllow, oldDeny, newAllow, newDeny);
 
-		sendLog(LogChannel.CHANNEL_LOG_CHANNEL, title, 0xFFFF00,
+		sendLog(SystemChannel.CHANNEL_LOG_CHANNEL, title, 0xFFFF00,
 				"Salon : <#" + entry.getTargetId() + ">"
 						+ "\nPour : " + holder(entry)
 						+ "\n\n" + diff

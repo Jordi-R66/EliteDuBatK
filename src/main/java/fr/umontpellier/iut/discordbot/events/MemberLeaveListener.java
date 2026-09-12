@@ -1,7 +1,7 @@
 package fr.umontpellier.iut.discordbot.events;
 
 import fr.umontpellier.iut.discordbot.Bot;
-import fr.umontpellier.iut.discordbot.config.ConfigStructure.LogChannel;
+import fr.umontpellier.iut.discordbot.config.ConfigStructure.SystemChannel;
 import fr.umontpellier.iut.discordbot.lib.AbstractEventListener;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
@@ -34,6 +34,6 @@ public class MemberLeaveListener extends AbstractEventListener {
 				.append("\n-# Départ volontaire, expulsion ou bannissement : voir le salon de modération.");
 
 		logger.info("\"{}\" left the server", user.getName());
-		getBot().getLogSender().sendLog(LogChannel.MEMBER_LOG_CHANNEL, "# 👋 Départ d'un membre", 0xFF0000, details.toString());
+		getBot().getLogSender().sendLog(SystemChannel.MEMBER_LOG_CHANNEL, "# 👋 Départ d'un membre", 0xFF0000, details.toString());
 	}
 }

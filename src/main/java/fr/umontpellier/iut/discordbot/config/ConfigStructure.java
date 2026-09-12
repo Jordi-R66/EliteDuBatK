@@ -7,154 +7,179 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigStructure {
-    public enum LogChannel {
-        @SerializedName(value = "voice_channel")
-        VOICE_CHANNEL("voice_channel"),
+	public enum SystemChannel {
+		@SerializedName("voice_channel")
+		VOICE_CHANNEL("voice_channel"),
 
+		@SerializedName("message_delete_channel")
+		MESSAGE_DELETE_CHANNEL("message_delete_channel"),
 
-        @SerializedName(value = "message_delete_channel")
-        MESSAGE_DELETE_CHANNEL("message_delete_channel"),
+		@SerializedName("message_edit_channel")
+		MESSAGE_EDIT_CHANNEL("message_edit_channel"),
 
-        @SerializedName(value = "message_edit_channel")
-        MESSAGE_EDIT_CHANNEL("message_edit_channel"),
+		@SerializedName("lock_channel")
+		LOCK_CHANNEL("lock_channel"),
 
-        @SerializedName(value = "lock_channel")
-        LOCK_CHANNEL("lock_channel"),
+		@SerializedName("channel_log_channel")
+		CHANNEL_LOG_CHANNEL("channel_log_channel"),
 
-        @SerializedName(value = "channel_log_channel")
-        CHANNEL_LOG_CHANNEL("channel_log_channel"),
+		@SerializedName("role_log_channel")
+		ROLE_LOG_CHANNEL("role_log_channel"),
 
-        @SerializedName(value = "role_log_channel")
-        ROLE_LOG_CHANNEL("role_log_channel"),
+		@SerializedName("member_log_channel")
+		MEMBER_LOG_CHANNEL("member_log_channel"),
 
-        @SerializedName(value = "member_log_channel")
-        MEMBER_LOG_CHANNEL("member_log_channel"),
+		@SerializedName("moderation_channel")
+		MODERATION_CHANNEL("moderation_channel"),
 
-        @SerializedName(value = "moderation_channel")
-        MODERATION_CHANNEL("moderation_channel");
+		@SerializedName("honeypot_channel")
+		HONEYPOT_CHANNEL("honeypot_channel");
 
-        private final String chanType;
+		private final String chanType;
 
-        LogChannel(String chanType) {
-            this.chanType = chanType;
-        }
+		SystemChannel(String chanType) {
+			this.chanType = chanType;
+		}
 
-        public String toString() {
-            return this.chanType;
-        }
+		public String toString() {
+			return this.chanType;
+		}
 
-        @Nullable
-        public static LogChannel fromString(String str) {
-            return switch (str) {
-                case "voice_channel" -> VOICE_CHANNEL;
-                case "message_delete_channel" -> MESSAGE_DELETE_CHANNEL;
-                case "message_edit_channel" -> MESSAGE_EDIT_CHANNEL;
-                case "lock_channel" -> LOCK_CHANNEL;
-                case "channel_log_channel" -> CHANNEL_LOG_CHANNEL;
-                case "role_log_channel" -> ROLE_LOG_CHANNEL;
-                case "member_log_channel" -> MEMBER_LOG_CHANNEL;
-                case "moderation_channel" -> MODERATION_CHANNEL;
-                default -> null;
-            };
-        }
-    }
+		@Nullable
+		public static SystemChannel fromString(String str) {
+			SystemChannel result = null;
+			boolean found = false;
+			SystemChannel[] values = SystemChannel.values();
+			int i = 0;
+			int length = values.length;
 
-    /** Accès à l'API StudySuite (planning, devoirs). */
-    public static class StudySuiteConfig {
-        private String baseUrl;
-        private String apiKey;
+			while (!found && i < length) {
+				boolean matches = values[i].chanType.equals(str);
+				if (matches) {
+					result = values[i];
+					found = true;
+				}
+				i++;
+			}
 
-        public StudySuiteConfig() {
-        }
+			return result;
+		}
+	}
 
-        public StudySuiteConfig(String baseUrl, String apiKey) {
-            this.baseUrl = baseUrl;
-            this.apiKey = apiKey;
-        }
+	public static class StudySuiteConfig {
+		private String baseUrl;
+		private String apiKey;
 
-        /** Vide : l'instance de l'IUT, {@code https://study-info.umontp.fr}. */
-        @Nullable
-        public String getBaseUrl() {
-            return baseUrl;
-        }
+		public StudySuiteConfig() {
+		}
 
-        /** Une des clés {@code bot.apiKeys} de l'API. Vide : le bot ne lit pas la classe des membres depuis leurs rôles. */
-        @Nullable
-        public String getApiKey() {
-            return apiKey;
-        }
-    }
+		public StudySuiteConfig(String baseUrl, String apiKey) {
+			this.baseUrl = baseUrl;
+			this.apiKey = apiKey;
+		}
 
-    private String token;
-    private String databasePath;
-    @SerializedName(value = "studySuite", alternate = {"studysuite"})
-    private StudySuiteConfig studySuite;
+		@Nullable
+		public String getBaseUrl() {
+			return baseUrl;
+		}
 
-    private String adminRole;
-    private Map<String, List<String>> groups;
-    private Map<String, String> channels;
+		@Nullable
+		public String getApiKey() {
+			return apiKey;
+		}
+	}
 
-    public String getToken() {
-        return token;
-    }
+	private String token;
+	private String databasePath;
 
-    public String getJDBCUrl() {
-        return "jdbc:sqlite:" + databasePath;
-    }
+	@SerializedName(value = "studySuite", alternate = { "studysuite" })
+	private StudySuiteConfig studySuite;
 
-    public List<String> getRolesIdForGroup(String group) {
-        if (groups == null) {
-            return List.of();
-        }
+	private String adminRole;
+	private Map<String, List<String>> groups;
+	private Map<String, String> channels;
 
-        List<String> rolesId = groups.get(group);
+	public String getToken() {
+		return token;
+	}
 
-        return rolesId == null ? List.of() : rolesId;
-    }
+	public String getJDBCUrl() {
+		return "jdbc:sqlite:" + databasePath;
+	}
 
-    public List<String> getRoles() {
-        return groups == null ? List.of() : groups.keySet().stream().toList();
-    }
+	public List<String> getRolesIdForGroup(String group) {
+		List<String> result = List.of();
+		boolean hasGroups = groups != null;
 
-    @Nullable
-    public StudySuiteConfig getStudySuite() {
-        return studySuite;
-    }
+		if (hasGroups) {
+			List<String> rolesId = groups.get(group);
+			boolean hasRoles = rolesId != null;
+			if (hasRoles) {
+				result = rolesId;
+			}
+		}
 
-    public String getAdminRole() {
-        return adminRole;
-    }
+		return result;
+	}
 
-    public Map<String, String> getChannels() {
-        return channels;
-    }
+	public List<String> getRoles() {
+		List<String> result = List.of();
+		boolean hasGroups = groups != null;
 
-    @Nullable
-    public String getChannelId(LogChannel channel) {
-        if (channels == null) {
-            return null;
-        }
+		if (hasGroups) {
+			result = groups.keySet().stream().toList();
+		}
 
-        String channelId = channels.get(channel.toString());
-        if (channelId != null) {
-            return channelId;
-        }
+		return result;
+	}
 
-        return channels.get(channel.name());
-    }
+	@Nullable
+	public StudySuiteConfig getStudySuite() {
+		return studySuite;
+	}
 
-    @Nullable
-    public String getVoiceChannelId() {
-        return getChannelId(LogChannel.VOICE_CHANNEL);
-    }
+	public String getAdminRole() {
+		return adminRole;
+	}
 
-    @Nullable
-    public String getMessageDeleteChannelId() {
-        return getChannelId(LogChannel.MESSAGE_DELETE_CHANNEL);
-    }
+	public Map<String, String> getChannels() {
+		return channels;
+	}
 
-    @Nullable
-    public String getLockChannelId() {
-        return getChannelId(LogChannel.LOCK_CHANNEL);
-    }
+	@Nullable
+	public String getChannelId(SystemChannel channel) {
+		String result = null;
+		boolean hasChannels = channels != null;
+
+		if (hasChannels) {
+			String channelId = channels.get(channel.toString());
+			boolean foundByToString = channelId != null;
+
+			if (foundByToString) {
+				result = channelId;
+			}
+
+			if (!foundByToString) {
+				result = channels.get(channel.name());
+			}
+		}
+
+		return result;
+	}
+
+	@Nullable
+	public String getVoiceChannelId() {
+		return getChannelId(SystemChannel.VOICE_CHANNEL);
+	}
+
+	@Nullable
+	public String getMessageDeleteChannelId() {
+		return getChannelId(SystemChannel.MESSAGE_DELETE_CHANNEL);
+	}
+
+	@Nullable
+	public String getLockChannelId() {
+		return getChannelId(SystemChannel.LOCK_CHANNEL);
+	}
+
 }
