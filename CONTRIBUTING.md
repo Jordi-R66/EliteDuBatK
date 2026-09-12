@@ -120,11 +120,11 @@ L'utilisation d'assistants IA (Copilot, ChatGPT, Claude, etc.) pour générer du
 
 ### Modélisation & UML
 
-Un petit diagramme UML (diagramme de classes, d'états, de cas d'usage) pour appuyer la conception d'une PR ou d'une Issue n'est pas obligatoire mais reste **toujours très apprécié**. L'utilisation du format PlantUML est d'ailleurs recommandée pour une intégration native au format texte.
+Un petit diagramme UML (diagramme de classes, d'états, de cas d'usage) pour appuyer la conception d'une PR ou d'une Issue n'est pas obligatoire mais reste **toujours très apprécié**. Vous pouvez par exemple utiliser PlantUML pour générer vos diagrammes.
 
 ### Architecture & Robustesse (SESE & Fail-safe)
 
-* **Single-Entry, Single-Exit (SESE) :** Il est impératif d'implémenter ce principe pour limiter les points de sortie multiples (seule exception : la levée d'Exceptions).
+* **Single-Entry, Single-Exit (SESE) :** Il est impératif d'implémenter ce principe pour limiter les points de sortie multiples (seule exception : la levée d'Exceptions). Cela consiste à n'avoir qu'un unique `return` dans chaque fonction et la variable retournée est changée au fil des instructions. Pensez donc à bien réfléchir vos `if`.
 * **Approche Fail-Safe (pessimiste) :** Les variables de retour doivent être initialisées avec leurs valeurs d'échec ou de blocage, et ne doivent être modifiées vers le cas nominal que si toutes les conditions sont réunies.
 * **Code Branchless :** Limitez au maximum la multiplication des blocs `else` et des sauts conditionnels.
 
@@ -170,3 +170,16 @@ public InteractionResponse handleStudentCommand(CommandEvent event) {
 * `priority: high` : Commande majeure défaillante touchant de nombreux utilisateurs.
 * `priority: medium` : Bug standard avec contournement ou fonctionnalité utile prévue.
 * `priority: low` : Retouche mineure, coquille ou détail cosmétique.
+
+### Scopes
+
+* `scope: commands` : Implémentation des slash-commands utilisateur
+* `scope: moderation` : Logs d'audit, gestion des sanctions, filtres automatiques
+* `scope: studysuite` : Intéractions avec Study Suite
+* `scope: core` : Gestion du client Discord, connexion Base de données, dispatch des événements
+
+### Statuts
+
+* `status: triage` : Issue récemment ouverte nécessitant qualification ou reproduction
+* `status: blocked` : En attente d'une dépendance externe (ex: API Discord ou autre API hors ligne).
+* `status: needs-repro` : Manque de détails, étapes de reproduction incomplètes ou logs absents
