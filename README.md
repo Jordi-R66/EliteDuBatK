@@ -13,6 +13,7 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 {
 	"token": "TOKEN_DU_BOT",
 	"databasePath": "data.db",
+	"allowed_guild_id": "ID_DU_SERVEUR",
 	"adminRole": "ID_DU_ROLE",
 	"groups": {
 		"nom-du-groupe": ["ID_ROLE_1", "ID_ROLE_2"]
@@ -39,6 +40,7 @@ La configuration est lue dans `config.json` (dossier courant), ou dans le fichie
 |---|---|
 | `token` | Token du bot (Discord Developer Portal). Ne jamais le commiter. |
 | `databasePath` | Chemin du fichier SQLite. Un chemin relatif part du dossier courant du bot (voir [Docker](#docker)). |
+| `allowed_guild_id` | Identifiant du serveur |
 | `adminRole` | ID du rôle autorisé à utiliser `/lock`. Les membres avec la permission Administrateur y ont aussi accès. Pendant un verrouillage, ce rôle garde le droit d'écrire. |
 | `groups` | Groupes de rôles pour la commande de ping : nom du groupe → liste d'IDs de rôles. |
 | `channels` | Salons de logs. Plusieurs clés peuvent pointer vers le même salon ; une clé absente ou vide désactive ce log (avertissement au démarrage). |

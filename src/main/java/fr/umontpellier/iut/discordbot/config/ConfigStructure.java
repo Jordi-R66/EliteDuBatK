@@ -95,6 +95,9 @@ public class ConfigStructure {
 	@SerializedName(value = "studySuite", alternate = { "studysuite" })
 	private StudySuiteConfig studySuite;
 
+	@SerializedName("allowed_guild_id")
+	private String allowedGuildId;
+
 	private String adminRole;
 	private Map<String, List<String>> groups;
 	private Map<String, String> channels;
@@ -182,4 +185,7 @@ public class ConfigStructure {
 		return getChannelId(SystemChannel.LOCK_CHANNEL);
 	}
 
+	public String getAllowedGuildId() {
+		return allowedGuildId;
+	}
 }

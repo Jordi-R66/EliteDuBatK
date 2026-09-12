@@ -1,6 +1,7 @@
 {
 	"token": "",
 	"databasePath": "data.db",
+	"allowed_guild_id": "",
 	"adminRole": "",
 	"groups": {},
 	"channels": {
