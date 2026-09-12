@@ -11,8 +11,10 @@ import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
@@ -29,8 +31,7 @@ public class LockCommand extends AbstractCommand {
     public LockCommand(Bot bot) {
         super(bot);
         this.channelLockService = new ChannelLockService(
-                getBot().getRepositories().getRepository(ChannelLockRepository.class)
-        );
+                getBot().getRepositories().getRepository(ChannelLockRepository.class));
     }
 
     @NotNull
@@ -39,14 +40,15 @@ public class LockCommand extends AbstractCommand {
         return Commands.slash("lock", "Bloquer les interactions avec ce salon").addSubcommands(
                 new SubcommandData("on", "Activer le verrouillage du salon"),
                 new SubcommandData("off", "Désactiver le verrouillage du salon"),
-                new SubcommandData("status", "Obtenir l'état du verrouillage du salon")
-        );
+                new SubcommandData("status", "Obtenir l'état du verrouillage du salon"))
+				.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR));
     }
 
     @Override
     public void execute(SlashCommandInteractionEvent event) {
         if (!event.isFromGuild() || !(event.getChannel() instanceof TextChannel)) {
-            event.reply("❌ Cette commande n'est disponible que dans un salon textuel d'un serveur.").setEphemeral(true).queue();
+            event.reply("❌ Cette commande n'est disponible que dans un salon textuel d'un serveur.").setEphemeral(true)
+                    .queue();
             return;
         }
 
@@ -91,8 +93,7 @@ public class LockCommand extends AbstractCommand {
                         "Salon: %s\nPar: %s\nDate: %s",
                         channel.getAsMention(),
                         member.getAsMention(),
-                        TimeFormat.DATE_TIME_SHORT.now()
-                ));
+                        TimeFormat.DATE_TIME_SHORT.now()));
             } catch (ServiceException e) {
                 logger.warn("Failed to lock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
@@ -134,8 +135,7 @@ public class LockCommand extends AbstractCommand {
                         member.getAsMention(),
                         TimeFormat.DATE_TIME_SHORT.now(),
                         lock.getLockedById(),
-                        TimeFormat.DATE_TIME_SHORT.atTimestamp(lock.getLockedAt())
-                ));
+                        TimeFormat.DATE_TIME_SHORT.atTimestamp(lock.getLockedAt())));
             } catch (ServiceException e) {
                 logger.warn("Failed to unlock channel: {}", e.getMessage());
                 event.getHook().editOriginal("❌ " + e.getMessage()).queue();
@@ -158,15 +158,15 @@ public class LockCommand extends AbstractCommand {
                     return;
                 }
 
-                // Une mention s'affiche même si le compte a été supprimé, contrairement à retrieveUserById
+                // Une mention s'affiche même si le compte a été supprimé, contrairement à
+                // retrieveUserById
                 ChannelLock lock = lockOpt.get();
                 String statusMessage = """
                         🔒 Ce salon est actuellement verrouillé
                         Verrouillé par: <@%s>
                         Date du verrouillage: <t:%d:F>""".formatted(
                         lock.getLockedById(),
-                        lock.getLockedAt() / 1000
-                );
+                        lock.getLockedAt() / 1000);
 
                 event.getHook().editOriginal(statusMessage).queue();
             } catch (ServiceException e) {
@@ -180,11 +180,13 @@ public class LockCommand extends AbstractCommand {
     }
 
     /**
-     * Répond en privé si le salon est déjà dans l'état demandé, avant la réponse publique de la commande.
+     * Répond en privé si le salon est déjà dans l'état demandé, avant la réponse
+     * publique de la commande.
      *
      * @return true si une réponse a été envoyée
      */
-    private boolean replyIfLockStateIs(SlashCommandInteractionEvent event, TextChannel channel, boolean locked, String message) {
+    private boolean replyIfLockStateIs(SlashCommandInteractionEvent event, TextChannel channel, boolean locked,
+            String message) {
         try {
             if (channelLockService.isChannelLocked(channel.getId()) == locked) {
                 event.reply(message).setEphemeral(true).queue();
@@ -209,8 +211,6 @@ public class LockCommand extends AbstractCommand {
                 Container.of(
                         TextDisplay.of(title),
                         Separator.createDivider(Separator.Spacing.SMALL),
-                        TextDisplay.of(details)
-                ).withAccentColor(color)
-        );
+                        TextDisplay.of(details)).withAccentColor(color));
     }
 }

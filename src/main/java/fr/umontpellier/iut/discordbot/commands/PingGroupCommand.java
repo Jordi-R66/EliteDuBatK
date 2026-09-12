@@ -5,10 +5,12 @@ import fr.umontpellier.iut.discordbot.lib.AbstractCommandWithAutocomplete;
 import fr.umontpellier.iut.discordbot.lib.Utils;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -26,7 +28,9 @@ public class PingGroupCommand extends AbstractCommandWithAutocomplete {
     @NotNull
     @Override
     public SlashCommandData getCommandInformation() {
-        return Commands.slash("ping-group", "Mentionner un groupe").addOption(OptionType.STRING, "group", "Le groupe à mentionner", true, true);
+        return Commands.slash("ping-group", "Mentionner un groupe")
+                .addOption(OptionType.STRING, "group", "Le groupe à mentionner", true, true)
+                .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR));
     }
 
     @Override
@@ -50,7 +54,8 @@ public class PingGroupCommand extends AbstractCommandWithAutocomplete {
                 .map(Role::getAsMention)
                 .toList();
 
-        event.reply(String.format("%s veut mentionner %s", member.getAsMention(), Utils.joinWithLastDifferent(", ", " et ", mentions))).queue();
+        event.reply(String.format("%s veut mentionner %s", member.getAsMention(),
+                Utils.joinWithLastDifferent(", ", " et ", mentions))).queue();
     }
 
     @Override
@@ -65,8 +70,8 @@ public class PingGroupCommand extends AbstractCommandWithAutocomplete {
                 correspondingGroups
                         .stream()
                         .map(group -> new Command.Choice(group, group))
-                        .toList()
-        ).queue();
+                        .toList())
+                .queue();
     }
 
     private List<String> getCorrespondingGroup(String group) {

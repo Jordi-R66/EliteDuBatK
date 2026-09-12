@@ -3,9 +3,11 @@ package fr.umontpellier.iut.discordbot.commands;
 import fr.umontpellier.iut.discordbot.Bot;
 import fr.umontpellier.iut.discordbot.lib.AbstractCommandWithAutocomplete;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -26,7 +28,8 @@ public class ChangeUsernameCommand extends AbstractCommandWithAutocomplete {
 	@Override
 	public SlashCommandData getCommandInformation() {
 		return Commands.slash("change-username", "Change ton nom d'utilisateur")
-				.addOption(OptionType.STRING, "username", "Le nouveau nom d'utilisateur", true);
+				.addOption(OptionType.STRING, "username", "Le nouveau nom d'utilisateur", true)
+				.setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.ADMINISTRATOR));
 	}
 
 	@Override
