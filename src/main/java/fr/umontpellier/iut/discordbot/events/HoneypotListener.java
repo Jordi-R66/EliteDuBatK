@@ -51,13 +51,15 @@ public class HoneypotListener extends MessageReceivedListener {
 		}
 
 		if (isHoneypot && isUser) {
-			String message_title = "# Honeypot déclenché";
+			String message_title = "# 🍯 CRITIQUE 🚨 : Honeypot déclenché";
 			@SuppressWarnings("null")
-			String message_body = "Honeypot déclenché par " + member.getAsMention() + " mais il est impossible de bannir son compte !\nVeuillez le faire manuellement.";
+			String message_body = "Honeypot déclenché par " + member.getAsMention()
+					+ " mais il est impossible de bannir son compte !\nVeuillez le faire manuellement.";
 
 			if (hasPermission) {
-				message_title = "# CRITIQUE: Honeypot déclenché";
-				message_body = "Honeypot déclenché par " + member.getAsMention() + ". Compte banni et derniers messages effacés.";
+				message_title = "# 🍯 Honeypot déclenché";
+				message_body = "Honeypot déclenché par " + member.getAsMention()
+						+ ". Compte banni et derniers messages effacés.";
 			}
 
 			getBot().getLogSender().sendLog(
@@ -66,7 +68,7 @@ public class HoneypotListener extends MessageReceivedListener {
 					0xFF0000,
 					message_body);
 
-			if (hasPermission){
+			if (hasPermission) {
 				enforceHoneypotBan(guild, member);
 			}
 		}
